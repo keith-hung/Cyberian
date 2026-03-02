@@ -3,12 +3,18 @@
 Full reference for all `jira` CLI commands and flags.
 Source: https://github.com/ankitpokhrel/jira-cli
 
-> **Note:** The binary is managed by `jira-launcher.sh`. No manual installation needed.
+> **Note:** The binary is managed by the launcher script (`jira-launcher.sh` on Linux/macOS, `jira-launcher.ps1` on Windows). No manual installation needed.
 
 ## Initial Setup
 
+**Linux / macOS:**
 ```bash
 ${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh init
+```
+
+**Windows (PowerShell):**
+```powershell
+& "${env:CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.ps1" init
 ```
 
 Prompts for:

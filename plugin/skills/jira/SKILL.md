@@ -14,10 +14,14 @@ Use it to interact with JIRA issues, epics, sprints, and boards via shell comman
 
 - User must have valid JIRA authentication (`jira init` completed with API token or PAT)
 
-The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the launcher:
-```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh <command> [flags]
-```
+The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the platform-appropriate launcher:
+
+| Platform | Command |
+|----------|---------|
+| Linux / macOS | `${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh <command> [flags]` |
+| Windows (PowerShell) | `& "${env:CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.ps1" <command> [flags]` |
+
+> **Note:** On Windows, jira-cli is only available for x86_64 architecture (ARM64 Windows is not supported by the upstream release).
 
 Before executing any command, verify authentication is configured:
 ```bash

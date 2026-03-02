@@ -24,10 +24,12 @@ Environment variables must be set before use:
 - `WEDAKA_EMP_NO` — Employee number
 - `WEDAKA_DEVICE_ID` — Device UUID for authentication
 
-The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the launcher:
-```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/wedaka-launcher.sh <command> [flags]
-```
+The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the platform-appropriate launcher:
+
+| Platform | Command |
+|----------|---------|
+| Linux / macOS | `${CLAUDE_PLUGIN_ROOT}/scripts/wedaka-launcher.sh <command> [flags]` |
+| Windows (PowerShell) | `& "${env:CLAUDE_PLUGIN_ROOT}/scripts/wedaka-launcher.ps1" <command> [flags]` |
 
 ## Commands
 

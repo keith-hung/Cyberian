@@ -23,10 +23,12 @@ Environment variables must be set before use:
 - `TIMECARD_USERNAME` — Login username
 - `TIMECARD_PASSWORD` — Login password
 
-The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the launcher:
-```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh <command> [flags]
-```
+The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the platform-appropriate launcher:
+
+| Platform | Command |
+|----------|---------|
+| Linux / macOS | `${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh <command> [flags]` |
+| Windows (PowerShell) | `& "${env:CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.ps1" <command> [flags]` |
 
 ## Workflow
 
