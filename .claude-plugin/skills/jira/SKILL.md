@@ -12,24 +12,21 @@ Use it to interact with JIRA issues, epics, sprints, and boards via shell comman
 
 ## Prerequisites
 
-- User must have valid JIRA authentication (`jira init` completed with API token or PAT)
+Environment variables must be set before use:
 
-The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the platform-appropriate launcher:
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `JIRA_API_TOKEN` | **Yes** | JIRA API token |
+| `JIRA_SERVER_URL` | **Yes** | JIRA instance URL (e.g. `https://company.atlassian.net`) |
+| `JIRA_USER_EMAIL` | **Yes** | Login email for authentication |
+| `JIRA_PROJECT` | No | Default project key |
+| `JIRA_BOARD` | No | Default board name |
 
-| Platform | Command |
-|----------|---------|
-| Linux / macOS | `${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh <command> [flags]` |
-| Windows (PowerShell) | `& "${env:CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.ps1" <command> [flags]` |
+The launcher auto-initializes jira-cli config on first run when the required env vars are set.
 
-> **Note:** On Windows, jira-cli is only available for x86_64 architecture (ARM64 Windows is not supported by the upstream release).
-
-Before executing any command, verify authentication is configured:
+The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the launcher:
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh me
-```
-If this fails, inform the user that jira-cli is not configured and guide them to run:
-```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh init
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh <command> [flags]
 ```
 
 ## Core Principles

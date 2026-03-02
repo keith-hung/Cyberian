@@ -6,7 +6,7 @@ wedaka-cli/wedaka
 .timecard-session.json
 
 # Plugin cache
-plugin/scripts/.cache/
+.claude-plugin/scripts/.cache/
 
 # Development notes
 dev/

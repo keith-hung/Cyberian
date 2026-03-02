@@ -7,8 +7,17 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $CacheDir = Join-Path $ScriptDir ".cache"
 $Bin = Join-Path $CacheDir "jira.exe"
 
-# Fast path: binary already cached
+# Fast path: binary already cached — still check auto-init
 if (Test-Path $Bin) {
+    $JiraConfig = Join-Path $env:USERPROFILE ".config\.jira\.config.yml"
+    if ((-not (Test-Path $JiraConfig)) -and $env:JIRA_API_TOKEN -and $env:JIRA_SERVER_URL -and $env:JIRA_USER_EMAIL) {
+        $InitArgs = @("init", "--installation", "cloud", "--server", $env:JIRA_SERVER_URL, "--login", $env:JIRA_USER_EMAIL, "--force")
+        if ($env:JIRA_PROJECT) { $InitArgs += @("--project", $env:JIRA_PROJECT) }
+        if ($env:JIRA_BOARD)   { $InitArgs += @("--board", $env:JIRA_BOARD) }
+
+        [Console]::Error.WriteLine("Auto-initializing jira-cli config...")
+        & $Bin @InitArgs 2>&1 | ForEach-Object { [Console]::Error.WriteLine($_) }
+    }
     & $Bin @args
     exit $LASTEXITCODE
 }
@@ -77,5 +86,17 @@ try {
 }
 
 [Console]::Error.WriteLine("Downloaded successfully.")
+
+# Auto-init if env vars are set and no config exists
+$JiraConfig = Join-Path $env:USERPROFILE ".config\.jira\.config.yml"
+if ((-not (Test-Path $JiraConfig)) -and $env:JIRA_API_TOKEN -and $env:JIRA_SERVER_URL -and $env:JIRA_USER_EMAIL) {
+    $InitArgs = @("init", "--installation", "cloud", "--server", $env:JIRA_SERVER_URL, "--login", $env:JIRA_USER_EMAIL, "--force")
+    if ($env:JIRA_PROJECT) { $InitArgs += @("--project", $env:JIRA_PROJECT) }
+    if ($env:JIRA_BOARD)   { $InitArgs += @("--board", $env:JIRA_BOARD) }
+
+    [Console]::Error.WriteLine("Auto-initializing jira-cli config...")
+    & $Bin @InitArgs 2>&1 | ForEach-Object { [Console]::Error.WriteLine($_) }
+}
+
 & $Bin @args
 exit $LASTEXITCODE
