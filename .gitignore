@@ -7,3 +7,6 @@ wedaka-cli/wedaka
 
 # Plugin cache
 plugin/scripts/.cache/
+
+# Development notes
+dev/
