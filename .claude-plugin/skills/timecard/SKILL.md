@@ -18,10 +18,16 @@ Activate when user asks to:
 
 ## Prerequisites
 
-Environment variables must be set before use:
+The following environment variables must be set:
 - `TIMECARD_BASE_URL` — TimeCard server URL (e.g., `http://timecard.example.com/TimeCard/`)
 - `TIMECARD_USERNAME` — Login username
 - `TIMECARD_PASSWORD` — Login password
+
+**Option A — Centralized config (recommended):**
+Copy `.claude/settings.json.example` to `.claude/settings.local.json` and fill in the `TIMECARD_*` values.
+
+**Option B — Shell profile:**
+Export the variables in `~/.zshrc` or `~/.bashrc`.
 
 The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the platform-appropriate launcher:
 

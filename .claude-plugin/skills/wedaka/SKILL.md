@@ -18,11 +18,17 @@ Activate when user asks to:
 
 ## Prerequisites
 
-Environment variables must be set before use:
+The following environment variables must be set:
 - `WEDAKA_API_URL` — WeDaka API base URL
 - `WEDAKA_USERNAME` — Employee username
 - `WEDAKA_EMP_NO` — Employee number
 - `WEDAKA_DEVICE_ID` — Device UUID for authentication
+
+**Option A — Centralized config (recommended):**
+Copy `.claude/settings.json.example` to `.claude/settings.local.json` and fill in the `WEDAKA_*` values.
+
+**Option B — Shell profile:**
+Export the variables in `~/.zshrc` or `~/.bashrc`.
 
 The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the platform-appropriate launcher:
 

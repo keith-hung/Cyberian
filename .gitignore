@@ -8,5 +8,8 @@ wedaka-cli/wedaka
 # Plugin cache
 .claude-plugin/scripts/.cache/
 
+# User-specific settings (contains credentials)
+.claude/settings.local.json
+
 # Development notes
 dev/

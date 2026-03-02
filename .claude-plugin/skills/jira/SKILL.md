@@ -12,7 +12,7 @@ Use it to interact with JIRA issues, epics, sprints, and boards via shell comman
 
 ## Prerequisites
 
-Environment variables must be set before use:
+The following environment variables must be set:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -21,6 +21,12 @@ Environment variables must be set before use:
 | `JIRA_USER_EMAIL` | **Yes** | Login email for authentication |
 | `JIRA_PROJECT` | No | Default project key |
 | `JIRA_BOARD` | No | Default board name |
+
+**Option A — Centralized config (recommended):**
+Copy `.claude/settings.json.example` to `.claude/settings.local.json` and fill in the `JIRA_*` values.
+
+**Option B — Shell profile:**
+Export the variables in `~/.zshrc` or `~/.bashrc`.
 
 The launcher auto-initializes jira-cli config on first run when the required env vars are set.
 
