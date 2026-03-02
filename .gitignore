@@ -1,0 +1,8 @@
+# CLI build output
+cli/timecard
+
+# Session files
+.timecard-session.json
+
+# Plugin cache
+plugin/scripts/.cache/

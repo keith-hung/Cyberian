@@ -1,0 +1,11 @@
+{
+  "name": "cyberist",
+  "description": "Workplace productivity tools — timesheet, JIRA, calendars, and more",
+  "skills": [
+    {
+      "name": "timecard",
+      "description": "Fill and manage timesheets in TimeCard. Trigger when user asks about: timesheet, timecard, work hours, filling hours, checking attendance.",
+      "path": "skills/timecard.md"
+    }
+  ]
+}
