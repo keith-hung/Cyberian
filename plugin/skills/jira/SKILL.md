@@ -7,19 +7,26 @@ argument-hint: "[action or issue key, e.g. 'list', 'PROJ-123', 'create bug']"
 
 # JIRA Skill — jira-cli Integration
 
-You have access to `jira` CLI (https://github.com/ankitpokhrel/jira-cli) on the user's system.
+You have access to `jira` CLI (https://github.com/ankitpokhrel/jira-cli) via the launcher script.
 Use it to interact with JIRA issues, epics, sprints, and boards via shell commands.
 
 ## Prerequisites
 
-- `jira` CLI must be installed and configured (`jira init` completed)
-- User must have valid JIRA authentication (API token or PAT)
+- User must have valid JIRA authentication (`jira init` completed with API token or PAT)
 
-Before executing any command, verify the CLI is available:
+The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the launcher:
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh <command> [flags]
 ```
-jira me
+
+Before executing any command, verify authentication is configured:
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh me
 ```
-If this fails, inform the user that jira-cli is not configured and guide them to run `jira init`.
+If this fails, inform the user that jira-cli is not configured and guide them to run:
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh init
+```
 
 ## Core Principles
 
@@ -44,28 +51,26 @@ When the user provides `$ARGUMENTS`:
 ### 1. List Issues
 ```bash
 # List issues in current project
-jira issue list --plain
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue list --plain
 
 # Filter by status
-jira issue list -s "In Progress" --plain
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue list -s "In Progress" --plain
 
 # Filter by assignee (current user)
-jira issue list -a$(jira me --plain) --plain
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue list -a$(${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh me --plain) --plain
 
 # Custom JQL query
-jira issue list --jql "project = PROJ AND status = 'To Do' ORDER BY priority DESC" --plain
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue list --jql "project = PROJ AND status = 'To Do' ORDER BY priority DESC" --plain
 ```
 
 ### 2. View Issue Details
 ```bash
-# View issue with comments
-jira issue view PROJ-123 --plain --comments 5
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue view PROJ-123 --plain --comments 5
 ```
 
 ### 3. Create Issue
 ```bash
-# Create with all fields (non-interactive)
-jira issue create \
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue create \
   -t Bug \
   -s "Summary of the issue" \
   -b "Detailed description" \
@@ -77,29 +82,28 @@ jira issue create \
 
 ### 4. Edit Issue
 ```bash
-jira issue edit PROJ-123 -s "Updated summary" --no-input
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue edit PROJ-123 -s "Updated summary" --no-input
 ```
 
 ### 5. Move/Transition Issue
 ```bash
-# Move issue to a new status
-jira issue move PROJ-123 "In Progress"
-jira issue move PROJ-123 "Done" -R "Done"
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue move PROJ-123 "In Progress"
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue move PROJ-123 "Done" -R "Done"
 ```
 
 ### 6. Assign Issue
 ```bash
-jira issue assign PROJ-123 username
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue assign PROJ-123 username
 ```
 
 ### 7. Add Comment
 ```bash
-jira issue comment add PROJ-123 "This is a comment" --no-input
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue comment add PROJ-123 "This is a comment" --no-input
 ```
 
 ### 8. Search with JQL
 ```bash
-jira issue list --jql "text ~ 'search term' AND project = PROJ" --plain
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh issue list --jql "text ~ 'search term' AND project = PROJ" --plain
 ```
 
 ## Output Formatting
@@ -115,7 +119,6 @@ When presenting JIRA data to the user:
 - If a command fails, check the error message and suggest fixes
 - Common issues: expired token, wrong project key, invalid status name
 - For permission errors, inform the user they may lack JIRA project access
-- If jira-cli is not installed, provide installation instructions from the reference
 
 ## Detailed Command Reference
 

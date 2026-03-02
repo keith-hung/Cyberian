@@ -3,24 +3,12 @@
 Full reference for all `jira` CLI commands and flags.
 Source: https://github.com/ankitpokhrel/jira-cli
 
-## Installation
-
-```bash
-# macOS
-brew install ankitpokhrel/jira-cli/jira-cli
-
-# Go install
-go install github.com/ankitpokhrel/jira-cli/cmd/jira@latest
-
-# npm / yarn
-npm install -g jira-cli-go
-yarn global add jira-cli-go
-```
+> **Note:** The binary is managed by `jira-launcher.sh`. No manual installation needed.
 
 ## Initial Setup
 
 ```bash
-jira init
+${CLAUDE_PLUGIN_ROOT}/scripts/jira-launcher.sh init
 ```
 
 Prompts for:
