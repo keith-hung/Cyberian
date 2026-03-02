@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="cyberian-logo.jpg" alt="Cyberian Logo" width="200">
+  <img src="cyberian-logo.png" alt="Cyberian Logo" width="200">
 </p>
 
 <h1 align="center">Cyberian</h1>
