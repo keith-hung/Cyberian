@@ -1,0 +1,20 @@
+{
+  "env": {
+    "TIMECARD_BASE_URL": "https://your-timecard-server.example.com/TimeCard/",
+    "TIMECARD_USERNAME": "your_username",
+    "TIMECARD_PASSWORD": "your_password",
+
+    "WEDAKA_API_URL": "https://your-wedaka-api.example.com",
+    "WEDAKA_USERNAME": "your_username",
+    "WEDAKA_EMP_NO": "your_employee_number",
+    "WEDAKA_DEVICE_ID": "your_device_uuid",
+
+    "JIRA_SERVER_URL": "https://your-company.atlassian.net",
+    "JIRA_USER_EMAIL": "you@example.com",
+    "JIRA_API_TOKEN": "your_api_token",
+    "JIRA_PROJECT": "PROJ",
+    "JIRA_BOARD": "My Board",
+
+    "OUTLOOK_ICS_URL": "https://outlook.office365.com/owa/calendar/.../reachcalendar.ics"
+  }
+}
