@@ -1,3 +1,10 @@
+---
+name: timecard
+description: "Fill and manage timesheets in TimeCard. Trigger when user asks about: timesheet, timecard, work hours, filling hours, checking attendance."
+user-invokable: true
+argument-hint: "[action, e.g. 'view', 'fill', 'summary']"
+---
+
 # TimeCard Skill
 
 Manage timesheets via the `timecard` CLI.

@@ -1,11 +1,7 @@
 ---
 name: jira
-description: >
-  Use this skill when the user asks to interact with JIRA — including listing, viewing, creating, editing,
-  moving, assigning, commenting on, or searching issues, as well as managing epics, sprints, and boards.
-  Also use when the user mentions JIRA issue keys (e.g., PROJ-123), asks about project status,
-  or wants to perform any JIRA-related workflow.
-user-invocable: true
+description: "Use this skill when the user asks to interact with JIRA — including listing, viewing, creating, editing, moving, assigning, commenting on, or searching issues, as well as managing epics, sprints, and boards. Also use when the user mentions JIRA issue keys (e.g., PROJ-123), asks about project status, or wants to perform any JIRA-related workflow."
+user-invokable: true
 argument-hint: "[action or issue key, e.g. 'list', 'PROJ-123', 'create bug']"
 ---
 

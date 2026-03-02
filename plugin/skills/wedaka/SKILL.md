@@ -1,3 +1,10 @@
+---
+name: wedaka
+description: "Clock in/out and manage attendance in WeDaka. Trigger when user asks about: clock in, clock out, punch in, punch out, attendance, timelog."
+user-invokable: true
+argument-hint: "[action, e.g. 'clock-in', 'clock-out', 'timelog']"
+---
+
 # WeDaka Skill
 
 Manage employee clock-in/out records and attendance via the `wedaka` CLI.
