@@ -1,11 +1,21 @@
 {
-  "name": "cyberist",
+  "name": "Cyberian",
   "description": "Workplace productivity tools — timesheet, JIRA, calendars, and more",
   "skills": [
     {
       "name": "timecard",
       "description": "Fill and manage timesheets in TimeCard. Trigger when user asks about: timesheet, timecard, work hours, filling hours, checking attendance.",
       "path": "skills/timecard.md"
+    },
+    {
+      "name": "wedaka",
+      "description": "Clock in/out and manage attendance in WeDaka. Trigger when user asks about: clock in, clock out, punch in, punch out, attendance, timelog.",
+      "path": "skills/wedaka.md"
+    },
+    {
+      "name": "jira",
+      "description": "Interact with JIRA — list, view, create, edit, move, assign, comment on, or search issues, manage epics, sprints, and boards. Trigger when user mentions JIRA issue keys (e.g., PROJ-123), asks about project status, or wants to perform any JIRA-related workflow.",
+      "path": "skills/jira/SKILL.md"
     }
   ]
 }

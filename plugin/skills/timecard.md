@@ -18,7 +18,7 @@ Environment variables must be set before use:
 
 The CLI binary is in `${CLAUDE_PLUGIN_ROOT}/scripts/`. Invoke via the launcher:
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh <command> [flags]
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh <command> [flags]
 ```
 
 ## Workflow
@@ -34,25 +34,25 @@ Always follow this sequence when filling timesheets:
 
 ### View current timesheet
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh timesheet --date YYYY-MM-DD
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh timesheet --date YYYY-MM-DD
 ```
 Returns JSON with `entries[]`, each containing `daily_hours`, `daily_status`, `daily_notes`.
 
 ### List projects
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh projects
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh projects
 ```
 Returns `projects[]` with `id` and `name`.
 
 ### List activities for a project
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh activities --project <project_id>
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh activities --project <project_id>
 ```
 The `value` field in each activity is the `activity_value` needed for the save command.
 
 ### Save timesheet (atomic)
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh save --date YYYY-MM-DD \
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh save --date YYYY-MM-DD \
   --entries '[{"entry_index":0,"project_id":"PID","activity_value":"VAL"}]' \
   --hours '[{"entry_index":0,"date":"YYYY-MM-DD","hours":8}]' \
   --notes '[{"entry_index":0,"date":"YYYY-MM-DD","note":"Description"}]'
@@ -61,13 +61,13 @@ At least one of `--entries`, `--hours`, `--notes` is required.
 
 ### Weekly summary
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh summary --date YYYY-MM-DD
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh summary --date YYYY-MM-DD
 ```
 Returns `total_hours`, `daily_totals`, `project_breakdown`, `statistics`.
 
 ### Version
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh version
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh version
 ```
 
 ## Important Rules
@@ -100,7 +100,7 @@ If some days in the week were already submitted (e.g., old month submitted, new 
 
 Example: filling hours for a week that crosses March into April:
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh save --date 2026-03-31 \
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh save --date 2026-03-31 \
   --hours '[
     {"entry_index":0,"date":"2026-04-01","hours":8},
     {"entry_index":0,"date":"2026-04-02","hours":8},
@@ -126,14 +126,14 @@ Session expires after 25 min idle; the CLI handles re-login automatically.
 
 ```bash
 # 1. Check current state
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh timesheet --date 2026-03-02
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh timesheet --date 2026-03-02
 
 # 2. Find the right activity
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh projects
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh activities --project 17647
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh projects
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh activities --project 17647
 
 # 3. Save entries + hours + notes
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh save --date 2026-03-02 \
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh save --date 2026-03-02 \
   --entries '[{"entry_index":0,"project_id":"17647","activity_value":"true$9$17647$100"}]' \
   --hours '[
     {"entry_index":0,"date":"2026-03-02","hours":8},
@@ -147,5 +147,5 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh save --date 2026-03-02 \
   ]'
 
 # 4. Verify
-${CLAUDE_PLUGIN_ROOT}/scripts/launcher.sh timesheet --date 2026-03-02
+${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh timesheet --date 2026-03-02
 ```
