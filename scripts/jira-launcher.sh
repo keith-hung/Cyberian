@@ -54,8 +54,9 @@ if [[ ! -x "$BIN" ]]; then
     fi
 
     # Extract binary from archive and clean up
-    tar xzf "$TMPFILE" -C "$CACHE_DIR" bin/jira --strip-components=1 2>/dev/null \
-        || tar xzf "$TMPFILE" -C "$CACHE_DIR" jira 2>/dev/null \
+    # Archive structure: jira_<ver>_<os>_<arch>/bin/jira (2 levels deep)
+    tar xzf "$TMPFILE" -C "$CACHE_DIR" --strip-components=2 --wildcards '*/bin/jira' 2>/dev/null \
+        || tar xzf "$TMPFILE" -C "$CACHE_DIR" --strip-components=1 --wildcards '*/jira' 2>/dev/null \
         || { echo '{"success":false,"error":"Failed to extract jira binary from archive"}' >&2; rm -f "$TMPFILE"; exit 1; }
     rm -f "$TMPFILE"
 
