@@ -14,10 +14,11 @@ Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plu
 ├── .claude/          Claude Code project config
 │   ├── settings.local.json  User-specific env vars (gitignored, contains credentials)
 │   └── settings.json.example  Template for settings.local.json
-├── .claude-plugin/   Claude Code plugin
-│   ├── plugin.json       Plugin manifest (4 skills: timecard, wedaka, jira, outlook-calendar)
-│   ├── skills/           Skill definitions (SKILL.md per skill)
-│   └── scripts/          Launcher scripts (.sh + .ps1) that auto-download CLI binaries
+├── .claude-plugin/   Claude Code plugin metadata
+│   ├── plugin.json       Plugin manifest
+│   └── marketplace.json  Marketplace manifest
+├── skills/           Skill definitions (SKILL.md per skill: timecard, wedaka, jira, outlook-calendar)
+├── scripts/          Launcher scripts (.sh + .ps1) + build script
 └── dev/              Development notes (gitignored)
 ```
 
@@ -76,7 +77,7 @@ Both CLIs follow the same conventions:
 
 The plugin (`plugin.json`) registers four skills that Claude Code activates based on keyword triggers. Each skill's SKILL.md contains the full usage instructions, commands, and examples.
 
-Launcher scripts in `.claude-plugin/scripts/` auto-download platform-appropriate binaries from GitHub Releases on first run, caching them in `.cache/`. The jira launcher also auto-initializes `jira-cli` config from env vars.
+Launcher scripts in `scripts/` auto-download platform-appropriate binaries from GitHub Releases on first run, caching them in `.cache/`. The jira launcher also auto-initializes `jira-cli` config from env vars.
 
 All 13 env vars across 4 skills can be centrally configured in `.claude/settings.local.json` (copy from `settings.json.example`). Shell profile exports also work and take precedence over settings.json values.
 
