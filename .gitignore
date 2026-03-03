@@ -1,6 +1,7 @@
 # CLI build output
 timecard-cli/timecard
 wedaka-cli/wedaka
+dist/
 
 # Session files
 .timecard-session.json

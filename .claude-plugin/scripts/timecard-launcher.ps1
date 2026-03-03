@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 $ErrorActionPreference = "Stop"
 
-$Repo = "keith-hung/timecard-cli"
+$Repo = "keith-hung/Cyberian"
 $Version = "v0.1.0"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $CacheDir = Join-Path $ScriptDir ".cache"
