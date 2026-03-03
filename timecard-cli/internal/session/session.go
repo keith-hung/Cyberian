@@ -1,5 +1,5 @@
 // Package session manages authentication, page fetching, and save operations
-// against the TCRS timecard server.
+// against the TimeCard server.
 package session
 
 import (
@@ -23,7 +23,7 @@ type Config struct {
 	SessionFile string
 }
 
-// Session manages the TCRS session lifecycle.
+// Session manages the TimeCard session lifecycle.
 type Session struct {
 	client        *httpclient.Client
 	config        Config
@@ -93,7 +93,7 @@ func (s *Session) saveState() {
 	}
 }
 
-// Login authenticates with the TCRS server.
+// Login authenticates with the TimeCard server.
 func (s *Session) Login() error {
 	resp, err := s.client.Post("servlet/VerifController", map[string]string{
 		"method": "login",

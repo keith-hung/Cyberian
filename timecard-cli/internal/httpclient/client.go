@@ -1,5 +1,5 @@
 // Package httpclient provides an HTTP client with cookie management,
-// manual redirect following, and session persistence for TCRS.
+// manual redirect following, and session persistence for TimeCard.
 package httpclient
 
 import (

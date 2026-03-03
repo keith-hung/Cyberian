@@ -9,7 +9,7 @@ Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plu
 ## Repository Structure
 
 ```
-├── timecard-cli/     Go CLI — timesheet management (TCRS web scraping)
+├── timecard-cli/     Go CLI — timesheet management (TimeCard web scraping)
 ├── wedaka-cli/       Go CLI — clock-in/out attendance (REST API)
 ├── .claude/          Claude Code project config
 │   ├── settings.local.json  User-specific env vars (gitignored, contains credentials)
@@ -45,7 +45,7 @@ There are no tests, linting, or CI pipelines configured.
 
 ### timecard-cli
 
-Scrapes a legacy Java web app (TCRS) by parsing HTML responses. Key flow:
+Scrapes a legacy Java web app (TimeCard) by parsing HTML responses. Key flow:
 
 1. **Session** (`internal/session/`) — cookie-based auth with auto-restore and 25-min expiry
 2. **HTTP client** (`internal/httpclient/`) — cookie jar, manual redirect following, session persistence to `.timecard-session.json`

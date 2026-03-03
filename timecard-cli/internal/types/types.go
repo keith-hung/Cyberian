@@ -1,7 +1,7 @@
 // Package types defines shared data structures for the timecard CLI.
 package types
 
-// ActivityEntry represents an activity from the TCRS activity list.
+// ActivityEntry represents an activity from the TimeCard activity list.
 // Parsed from act.append() or activityList.append() calls in HTML.
 type ActivityEntry struct {
 	ProjectID  string `json:"project_id"`
