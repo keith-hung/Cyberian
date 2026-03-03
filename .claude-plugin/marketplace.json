@@ -1,0 +1,17 @@
+{
+  "name": "cyberian",
+  "owner": {
+    "name": "Keith Hung"
+  },
+  "metadata": {
+    "description": "Workplace productivity tools — timesheet, attendance, JIRA, and calendars"
+  },
+  "plugins": [
+    {
+      "name": "cyberian",
+      "source": ".",
+      "description": "Workplace productivity tools — timesheet, JIRA, calendars, and more",
+      "version": "0.1.0"
+    }
+  ]
+}
