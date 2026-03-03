@@ -29,6 +29,10 @@ Cyberian 是一個 monorepo，包含兩個 Go CLI 應用程式與一個 Claude C
 │   ├── plugin.json           Plugin manifest（4 skills）
 │   ├── skills/               Skill 定義（每個 skill 一份 SKILL.md）
 │   └── scripts/              Launcher scripts（自動下載 CLI binary）
+├── scripts/              建置腳本
+│   └── build.sh              跨平台 cross-compile
+├── .github/workflows/    CI/CD
+│   └── release.yml           Push tag 自動 build + release
 ├── .claude/              Claude Code 專案設定
 │   └── settings.json.example    環境變數範本
 └── dev/                  開發筆記（gitignored）
@@ -39,12 +43,24 @@ Cyberian 是一個 monorepo，包含兩個 Go CLI 應用程式與一個 Claude C
 兩個 CLI 皆為零依賴的 Go module（Go 1.25，僅使用 stdlib）。
 
 ```bash
-# 建置 timecard-cli
+# 單一平台建置（開發用）
 cd timecard-cli && go build -o timecard .
-
-# 建置 wedaka-cli
 cd wedaka-cli && go build -o wedaka .
+
+# 跨平台建置（產出至 dist/）
+./scripts/build.sh v0.1.0
 ```
+
+### Release 流程
+
+Push version tag 後 GitHub Actions 會自動 cross-compile 並建立 Release：
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+支援 6 個平台：linux/darwin/windows × amd64/arm64。
 
 ## CLI 工具
 
