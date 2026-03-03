@@ -32,7 +32,7 @@
 
 ```bash
 claude plugin marketplace add keith-hung/Cyberian
-claude plugin install cyberian@cyberian
+claude plugin install cyberian@cyberian-marketplace
 ```
 
 **設定環境變數** — 將 `env` 區塊加入 `~/.claude/settings.json`：
@@ -64,11 +64,11 @@ claude plugin install cyberian@cyberian
 
 Plugin 設定進版控，團隊成員 clone 後自動啟用。認證資訊各自設定於 local scope。
 
-**安裝：**
+**安裝（由一位成員執行並 commit `.claude/settings.json`）：**
 
 ```bash
-claude plugin marketplace add keith-hung/Cyberian
-claude plugin install cyberian@cyberian --scope project
+claude plugin marketplace add keith-hung/Cyberian --scope project
+claude plugin install cyberian@cyberian-marketplace --scope project
 ```
 
 **設定環境變數** — 複製範本後填入個人認證資訊（每位成員各自操作）：
@@ -89,7 +89,7 @@ Plugin 與環境變數都僅限此專案，不進版控。
 
 ```bash
 claude plugin marketplace add keith-hung/Cyberian
-claude plugin install cyberian@cyberian --scope local
+claude plugin install cyberian@cyberian-marketplace --scope local
 ```
 
 **設定環境變數** — 複製範本後填入認證資訊：

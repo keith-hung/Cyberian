@@ -1,5 +1,5 @@
 {
-  "name": "cyberian",
+  "name": "cyberian-marketplace",
   "owner": {
     "name": "Keith Hung"
   },
@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "cyberian",
-      "source": ".",
+      "source": "./",
       "description": "Workplace productivity tools — timesheet, JIRA, calendars, and more",
       "version": "0.1.0"
     }
