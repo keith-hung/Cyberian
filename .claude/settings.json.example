@@ -15,6 +15,15 @@
     "JIRA_PROJECT": "PROJ",
     "JIRA_BOARD": "My Board",
 
-    "OUTLOOK_ICS_URL": "https://outlook.office365.com/owa/calendar/.../reachcalendar.ics"
+    "OUTLOOK_ICS_URL": "https://outlook.office365.com/owa/calendar/.../reachcalendar.ics",
+
+    "AZDO_BASE_URL": "https://your-tfs-server.example.com:8080",
+    "AZDO_COLLECTION": "DefaultCollection",
+    "AZDO_DOMAIN": "DOMAIN",
+    "AZDO_USERNAME": "your_username",
+    "AZDO_PASSWORD": "your_password",
+    "AZDO_PROJECT": "MyProject",
+    "AZDO_REPO": "MyRepo",
+    "AZDO_API_VERSION": "5.0"
   }
 }

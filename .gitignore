@@ -1,6 +1,7 @@
 # CLI build output
 timecard-cli/timecard
 wedaka-cli/wedaka
+azuredevops-cli/azuredevops
 dist/
 
 # Session files
