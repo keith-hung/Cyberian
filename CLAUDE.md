@@ -4,27 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plugin that exposes them as skills. It contains two Go CLI applications and a Claude Code plugin with four skills.
+Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plugin that exposes them as skills. It contains three Go CLI applications and a Claude Code plugin with five skills.
 
 ## Repository Structure
 
 ```
 ├── timecard-cli/     Go CLI — timesheet management (TimeCard web scraping)
 ├── wedaka-cli/       Go CLI — clock-in/out attendance (REST API)
+├── azuredevops-cli/  Go CLI — Azure DevOps Server projects, repos & PRs (REST API)
 ├── .claude/          Claude Code project config
 │   ├── settings.local.json  User-specific env vars (gitignored, contains credentials)
 │   └── settings.json.example  Template for settings.local.json
 ├── .claude-plugin/   Claude Code plugin metadata
 │   ├── plugin.json       Plugin manifest
 │   └── marketplace.json  Marketplace manifest
-├── skills/           Skill definitions (SKILL.md per skill: timecard, wedaka, jira, outlook-calendar)
+├── skills/           Skill definitions (SKILL.md per skill: timecard, wedaka, jira, outlook-calendar, azuredevops)
 ├── scripts/          Launcher scripts (.sh + .ps1) + build script
 └── dev/              Development notes (gitignored)
 ```
 
 ## Build & Run
 
-Both CLIs are zero-dependency Go modules (Go 1.25, stdlib only — no third-party imports).
+All CLIs are zero-dependency Go modules (Go 1.25, stdlib only — no third-party imports).
 
 ```bash
 # Build timecard-cli
@@ -33,12 +34,16 @@ cd timecard-cli && go build -o timecard .
 # Build wedaka-cli
 cd wedaka-cli && go build -o wedaka .
 
+# Build azuredevops-cli
+cd azuredevops-cli && go build -o azuredevops .
+
 # Run commands directly
 ./timecard-cli/timecard <command> [flags]
 ./wedaka-cli/wedaka <command> [flags]
+./azuredevops-cli/azuredevops <command> [flags]
 ```
 
-Build outputs (`timecard-cli/timecard`, `wedaka-cli/wedaka`) are gitignored.
+Build outputs (`timecard-cli/timecard`, `wedaka-cli/wedaka`, `azuredevops-cli/azuredevops`) are gitignored.
 
 There are no tests, linting, or CI pipelines configured.
 
@@ -65,9 +70,17 @@ Commands: `clock-in`, `clock-out`, `timelog`, `check-workday`, `version`
 
 Config via env vars (set in `.claude/settings.local.json` or shell profile): `WEDAKA_API_URL`, `WEDAKA_USERNAME`, `WEDAKA_EMP_NO`, `WEDAKA_DEVICE_ID`
 
+### azuredevops-cli
+
+REST API client for Azure DevOps Server (on-premises, IIS Basic Auth). Manages projects, repositories, and pull requests.
+
+Commands: `projects`, `repos`, `prs`, `pr`, `pr-create`, `pr-update`, `pr-approve`, `pr-reject`, `pr-comment`, `pr-reviewers`, `pr-add-reviewer`, `version`
+
+Config via env vars: `AZDO_BASE_URL`, `AZDO_COLLECTION`, `AZDO_DOMAIN` (optional), `AZDO_USERNAME`, `AZDO_PASSWORD`, `AZDO_PROJECT` (optional), `AZDO_REPO` (optional), `AZDO_API_VERSION` (optional, default: 5.0), `AZDO_INSECURE` (optional, skip TLS verification)
+
 ### Shared CLI patterns
 
-Both CLIs follow the same conventions:
+All CLIs follow the same conventions:
 - **Manual flag parsing** — no flag library; `ParseGlobalFlags()` in `cmd/root.go` handles `--flag value` pairs with env var fallbacks
 - **Subcommand extraction** — `extractSubcommand()` in `main.go` pulls the command from args (flags can appear before or after)
 - **JSON-only output** — stdout for success, stderr for errors (`{"success":false,"error":"..."}`)
@@ -75,11 +88,11 @@ Both CLIs follow the same conventions:
 
 ### Claude Code Plugin
 
-The plugin (`plugin.json`) registers four skills that Claude Code activates based on keyword triggers. Each skill's SKILL.md contains the full usage instructions, commands, and examples.
+The plugin (`plugin.json`) registers five skills that Claude Code activates based on keyword triggers. Each skill's SKILL.md contains the full usage instructions, commands, and examples.
 
 Launcher scripts in `scripts/` auto-download platform-appropriate binaries from GitHub Releases on first run, caching them in `.cache/`. The jira launcher also auto-initializes `jira-cli` config from env vars.
 
-All 13 env vars across 4 skills can be centrally configured in `.claude/settings.local.json` (copy from `settings.json.example`). Shell profile exports also work and take precedence over settings.json values.
+All 22 env vars across 5 skills can be centrally configured in `.claude/settings.local.json` (copy from `settings.json.example`). Shell profile exports also work and take precedence over settings.json values.
 
 ## Key Conventions
 

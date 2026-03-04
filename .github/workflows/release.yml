@@ -60,6 +60,25 @@ jobs:
             cd wedaka-cli && go build -ldflags="${LDFLAGS}" -o "../dist/wedaka-cli_${GOOS}_${GOARCH}" .
           fi
 
+      - name: Build azuredevops-cli
+        env:
+          CGO_ENABLED: "0"
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          COMMIT="$(git rev-parse --short HEAD)"
+          BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          MODULE="$(grep '^module' azuredevops-cli/go.mod | awk '{print $2}')"
+          LDFLAGS="-s -w -X ${MODULE}/cmd.Version=${VERSION} -X ${MODULE}/cmd.Commit=${COMMIT} -X ${MODULE}/cmd.BuildDate=${BUILD_DATE}"
+
+          mkdir -p dist
+          if [ "${GOOS}" = "windows" ]; then
+            cd azuredevops-cli && go build -ldflags="${LDFLAGS}" -o "../dist/azuredevops-cli_windows_${GOARCH}.exe" .
+          else
+            cd azuredevops-cli && go build -ldflags="${LDFLAGS}" -o "../dist/azuredevops-cli_${GOOS}_${GOARCH}" .
+          fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
