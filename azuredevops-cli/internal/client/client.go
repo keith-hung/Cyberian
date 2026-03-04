@@ -178,37 +178,17 @@ func (c *Client) ResolveRepoID(project, nameOrID string) (string, error) {
 
 // ListPullRequests returns pull requests for a repository.
 func (c *Client) ListPullRequests(project, repoID, status string) (*types.PRListResponse, error) {
-	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullrequests", url.PathEscape(project), url.PathEscape(repoID))
-
-	u, err := url.Parse(fmt.Sprintf("%s/%s/%s", c.baseURL, c.collection, path))
-	if err != nil {
-		return nil, fmt.Errorf("parse URL: %w", err)
-	}
-	q := u.Query()
-	q.Set("api-version", c.apiVersion)
+	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullrequests",
+		url.PathEscape(project), url.PathEscape(repoID))
 	if status != "" && status != "all" {
-		q.Set("searchCriteria.status", status)
+		path += "?searchCriteria.status=" + url.QueryEscape(status)
 	}
-	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest("GET", u.String(), nil)
+	body, statusCode, err := c.doRequest("GET", path, nil)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+		return nil, err
 	}
-	req.SetBasicAuth(c.username, c.password)
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("network error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read response: %w", err)
-	}
-	if err := checkResponse(resp.StatusCode, body); err != nil {
+	if err := checkResponse(statusCode, body); err != nil {
 		return nil, err
 	}
 
@@ -365,33 +345,11 @@ func (c *Client) AddReviewer(project, repoID string, prID int, reviewerID string
 
 // GetCurrentUserID returns the authenticated user's ID.
 func (c *Client) GetCurrentUserID() (string, error) {
-	// connectionData is at the server level, not collection level
-	u, err := url.Parse(fmt.Sprintf("%s/%s/_apis/connectionData", c.baseURL, c.collection))
+	body, status, err := c.doRequest("GET", "_apis/connectionData", nil)
 	if err != nil {
-		return "", fmt.Errorf("parse URL: %w", err)
+		return "", err
 	}
-	q := u.Query()
-	q.Set("api-version", c.apiVersion)
-	u.RawQuery = q.Encode()
-
-	req, err := http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return "", fmt.Errorf("create request: %w", err)
-	}
-	req.SetBasicAuth(c.username, c.password)
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("network error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("read response: %w", err)
-	}
-	if err := checkResponse(resp.StatusCode, body); err != nil {
+	if err := checkResponse(status, body); err != nil {
 		return "", err
 	}
 

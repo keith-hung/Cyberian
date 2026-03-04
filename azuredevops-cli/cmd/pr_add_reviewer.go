@@ -2,13 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 
 	"github.com/keith-hung/azuredevops-cli/internal/types"
 )
-
-var guidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // RunPRAddReviewer adds a reviewer to a pull request.
 func RunPRAddReviewer(gf *GlobalFlags, args []string) {
@@ -58,16 +55,8 @@ func RunPRAddReviewer(gf *GlobalFlags, args []string) {
 		ExitErrorInfer(err.Error())
 	}
 
-	// Use reviewer value directly — if it's a GUID, pass as-is.
-	// If it's a domain\username, Azure DevOps Server should accept it.
-	reviewerID := reviewer
-	if !guidPattern.MatchString(reviewer) {
-		// Not a GUID — pass as unique name; the API endpoint path requires an ID,
-		// so we use the unique name as the identifier which Azure DevOps may accept.
-		reviewerID = reviewer
-	}
-
-	if err := c.AddReviewer(project, repoID, prID, reviewerID); err != nil {
+	// Pass reviewer directly — works for both GUIDs and domain\username.
+	if err := c.AddReviewer(project, repoID, prID, reviewer); err != nil {
 		ExitErrorInfer(err.Error())
 	}
 
