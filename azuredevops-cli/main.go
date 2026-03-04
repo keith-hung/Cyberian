@@ -8,7 +8,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		cmd.ExitError("usage: azuredevops <command> [flags]\ncommands: projects, repos, prs, pr, pr-create, pr-update, pr-approve, pr-reject, pr-comment, pr-reviewers, pr-add-reviewer, version", 1)
+		cmd.ExitError("usage: azuredevops <command> [flags]\ncommands: projects, repos, prs, my-prs, pr, pr-create, pr-update, pr-approve, pr-reject, pr-comment, pr-reviewers, pr-add-reviewer, version", 1)
 	}
 
 	subCmd, otherArgs := extractSubcommand(os.Args[1:])
@@ -24,6 +24,8 @@ func main() {
 		cmd.RunRepos(gf, subArgs)
 	case "prs":
 		cmd.RunPRs(gf, subArgs)
+	case "my-prs":
+		cmd.RunMyPRs(gf, subArgs)
 	case "pr":
 		cmd.RunPR(gf, subArgs)
 	case "pr-create":
@@ -41,14 +43,14 @@ func main() {
 	case "pr-add-reviewer":
 		cmd.RunPRAddReviewer(gf, subArgs)
 	default:
-		cmd.ExitError("unknown command: "+subCmd+"\ncommands: projects, repos, prs, pr, pr-create, pr-update, pr-approve, pr-reject, pr-comment, pr-reviewers, pr-add-reviewer, version", 1)
+		cmd.ExitError("unknown command: "+subCmd+"\ncommands: projects, repos, prs, my-prs, pr, pr-create, pr-update, pr-approve, pr-reject, pr-comment, pr-reviewers, pr-add-reviewer, version", 1)
 	}
 }
 
 // extractSubcommand finds and removes the subcommand from args.
 func extractSubcommand(args []string) (string, []string) {
 	commands := map[string]bool{
-		"projects": true, "repos": true, "prs": true, "pr": true,
+		"projects": true, "repos": true, "prs": true, "my-prs": true, "pr": true,
 		"pr-create": true, "pr-update": true, "pr-approve": true,
 		"pr-reject": true, "pr-comment": true, "pr-reviewers": true,
 		"pr-add-reviewer": true, "version": true,

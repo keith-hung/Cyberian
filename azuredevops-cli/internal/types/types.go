@@ -285,3 +285,30 @@ type VersionOutput struct {
 	Commit    string `json:"commit"`
 	BuildDate string `json:"build_date"`
 }
+
+// MyPROutput is a single pull request in the my-prs output, with cross-project context.
+type MyPROutput struct {
+	ID           int              `json:"id"`
+	Title        string           `json:"title"`
+	Status       string           `json:"status"`
+	CreatedBy    string           `json:"created_by"`
+	CreationDate string           `json:"creation_date"`
+	SourceBranch string           `json:"source_branch"`
+	TargetBranch string           `json:"target_branch"`
+	MergeStatus  string           `json:"merge_status"`
+	IsDraft      bool             `json:"is_draft"`
+	Project      string           `json:"project"`
+	Repo         string           `json:"repo"`
+	Roles        []string         `json:"roles"`
+	Reviewers    []ReviewerOutput `json:"reviewers,omitempty"`
+}
+
+// MyPRsOutput is the output for the my-prs command.
+type MyPRsOutput struct {
+	Success      bool         `json:"success"`
+	Role         string       `json:"role"`
+	Status       string       `json:"status"`
+	Project      string       `json:"project,omitempty"`
+	PullRequests []MyPROutput `json:"pull_requests"`
+	Count        int          `json:"count"`
+}

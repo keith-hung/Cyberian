@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO="keith-hung/Cyberian"
-VERSION="v0.2.0"
+VERSION="v0.2.1"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CACHE_DIR="$SCRIPT_DIR/.cache"
 BIN="$CACHE_DIR/timecard-cli"
