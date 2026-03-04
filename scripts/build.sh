@@ -4,7 +4,7 @@ set -euo pipefail
 # Cross-compile timecard-cli, wedaka-cli, and azuredevops-cli for all supported platforms.
 # Usage:
 #   ./scripts/build.sh              # build with version "dev"
-#   ./scripts/build.sh v0.2.0       # build with explicit version
+#   ./scripts/build.sh v0.2.1       # build with explicit version
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="${1:-dev}"
