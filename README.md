@@ -54,7 +54,7 @@ claude plugin install cyberian@cyberian-marketplace
     "JIRA_PROJECT": "PROJ",
     "JIRA_BOARD": "My Board",
     "OUTLOOK_ICS_URL": "https://outlook.office365.com/owa/calendar/.../reachcalendar.ics",
-    "AZDO_BASE_URL": "https://your-tfs-server.example.com:8080",
+    "AZDO_BASE_URL": "https://your-tfs-server.example.com:8080/tfs",
     "AZDO_COLLECTION": "DefaultCollection",
     "AZDO_DOMAIN": "DOMAIN",
     "AZDO_USERNAME": "your_username",

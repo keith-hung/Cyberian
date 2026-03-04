@@ -24,7 +24,7 @@ The following environment variables must be set:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `AZDO_BASE_URL` | Yes | Server URL, e.g. `https://tfs.company.com:8080` |
+| `AZDO_BASE_URL` | Yes | Server URL (include virtual directory path), e.g. `https://tfs.company.com:8080/tfs` |
 | `AZDO_COLLECTION` | Yes | Collection name, e.g. `DefaultCollection` |
 | `AZDO_DOMAIN` | No | AD domain name, e.g. `MYDOMAIN` — auto-prepended to username |
 | `AZDO_USERNAME` | Yes | Username (plain, e.g. `jdoe`; or with domain, e.g. `DOMAIN\user`) |
