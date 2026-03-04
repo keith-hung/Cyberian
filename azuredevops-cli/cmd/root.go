@@ -24,6 +24,7 @@ type GlobalFlags struct {
 	APIVersion string
 	Pretty     bool
 	PassStdin  bool
+	Insecure   bool
 }
 
 // ParseGlobalFlags extracts global flags from args. Returns parsed flags and remaining args.
@@ -37,6 +38,7 @@ func ParseGlobalFlags(args []string) (*GlobalFlags, []string) {
 		Project:    envOrDefault("AZDO_PROJECT", ""),
 		Repo:       envOrDefault("AZDO_REPO", ""),
 		APIVersion: envOrDefault("AZDO_API_VERSION", "5.0"),
+		Insecure:   envOrBool("AZDO_INSECURE", false),
 	}
 
 	var remaining []string
@@ -66,6 +68,8 @@ func ParseGlobalFlags(args []string) (*GlobalFlags, []string) {
 			gf.APIVersion = args[i]
 		case arg == "--pass-stdin":
 			gf.PassStdin = true
+		case arg == "--insecure":
+			gf.Insecure = true
 		case arg == "--pretty":
 			gf.Pretty = true
 		default:
@@ -103,7 +107,7 @@ func NewClient(gf *GlobalFlags) *client.Client {
 	if gf.Domain != "" && !strings.Contains(username, `\`) {
 		username = gf.Domain + `\` + username
 	}
-	return client.New(gf.BaseURL, gf.Collection, username, gf.Password, gf.APIVersion)
+	return client.New(gf.BaseURL, gf.Collection, username, gf.Password, gf.APIVersion, gf.Insecure)
 }
 
 // OutputJSON marshals v to JSON and writes to stdout.
@@ -169,6 +173,30 @@ func envOrDefault(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func envOrBool(key string, fallback bool) bool {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	return v == "1" || strings.EqualFold(v, "true")
+}
+
+func isGUID(s string) bool {
+	if len(s) != 36 {
+		return false
+	}
+	for i, c := range s {
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if c != '-' {
+				return false
+			}
+		} else if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	return true
 }
 
 func containsAny(s string, subs ...string) bool {

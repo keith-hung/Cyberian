@@ -26,8 +26,8 @@ type Client struct {
 	repoCache  map[string]string // "project/repoName" -> repoID
 }
 
-// New creates a Client.
-func New(baseURL, collection, username, password, apiVersion string) *Client {
+// New creates a Client. When insecure is true, TLS certificate verification is skipped.
+func New(baseURL, collection, username, password, apiVersion string, insecure bool) *Client {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &Client{
 		baseURL:    baseURL,
@@ -39,7 +39,7 @@ func New(baseURL, collection, username, password, apiVersion string) *Client {
 			Timeout: 30 * time.Second,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
+					InsecureSkipVerify: insecure,
 				},
 			},
 		},
@@ -180,7 +180,7 @@ func (c *Client) ResolveRepoID(project, nameOrID string) (string, error) {
 func (c *Client) ListPullRequests(project, repoID, status string) (*types.PRListResponse, error) {
 	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullrequests",
 		url.PathEscape(project), url.PathEscape(repoID))
-	if status != "" && status != "all" {
+	if status != "" {
 		path += "?searchCriteria.status=" + url.QueryEscape(status)
 	}
 
@@ -361,5 +361,26 @@ func (c *Client) GetCurrentUserID() (string, error) {
 		return "", fmt.Errorf("could not determine authenticated user ID")
 	}
 	return result.AuthenticatedUser.ID, nil
+}
+
+// ResolveIdentityID resolves a display name or domain\username to a GUID via the Identity API.
+func (c *Client) ResolveIdentityID(searchValue string) (string, error) {
+	path := "_apis/identities?searchFilter=General&filterValue=" + url.QueryEscape(searchValue)
+	body, status, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return "", err
+	}
+	if err := checkResponse(status, body); err != nil {
+		return "", fmt.Errorf("identity search: %w", err)
+	}
+
+	var result types.APIIdentitySearchResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return "", fmt.Errorf("decode identity response: %w", err)
+	}
+	if result.Count == 0 || len(result.Value) == 0 {
+		return "", fmt.Errorf("no identity found for %q", searchValue)
+	}
+	return result.Value[0].ID, nil
 }
 

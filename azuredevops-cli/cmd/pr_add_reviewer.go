@@ -55,8 +55,17 @@ func RunPRAddReviewer(gf *GlobalFlags, args []string) {
 		ExitErrorInfer(err.Error())
 	}
 
-	// Pass reviewer directly — works for both GUIDs and domain\username.
-	if err := c.AddReviewer(project, repoID, prID, reviewer); err != nil {
+	// Resolve reviewer: if not a GUID, look up via Identity API.
+	reviewerID := reviewer
+	if !isGUID(reviewer) {
+		resolved, err := c.ResolveIdentityID(reviewer)
+		if err != nil {
+			ExitErrorInfer(err.Error())
+		}
+		reviewerID = resolved
+	}
+
+	if err := c.AddReviewer(project, repoID, prID, reviewerID); err != nil {
 		ExitErrorInfer(err.Error())
 	}
 
