@@ -24,6 +24,7 @@
     "AZDO_PASSWORD": "your_password",
     "AZDO_PROJECT": "MyProject",
     "AZDO_REPO": "MyRepo",
-    "AZDO_API_VERSION": "5.0"
+    "AZDO_API_VERSION": "5.0",
+    "AZDO_INSECURE": "false"
   }
 }
