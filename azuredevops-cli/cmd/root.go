@@ -37,7 +37,7 @@ func ParseGlobalFlags(args []string) (*GlobalFlags, []string) {
 		Password:   envOrDefault("AZDO_PASSWORD", ""),
 		Project:    envOrDefault("AZDO_PROJECT", ""),
 		Repo:       envOrDefault("AZDO_REPO", ""),
-		APIVersion: envOrDefault("AZDO_API_VERSION", "5.0"),
+		APIVersion: envOrDefault("AZDO_API_VERSION", "5.0-preview.1"),
 		Insecure:   envOrBool("AZDO_INSECURE", false),
 	}
 

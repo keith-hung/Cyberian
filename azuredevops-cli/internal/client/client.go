@@ -363,6 +363,27 @@ func (c *Client) GetCurrentUserID() (string, error) {
 	return result.AuthenticatedUser.ID, nil
 }
 
+// ListMyPullRequests returns pull requests across all projects filtered by a search criterion.
+// searchParam should be "searchCriteria.creatorId" or "searchCriteria.reviewerId".
+func (c *Client) ListMyPullRequests(status, searchParam, userID string) (*types.PRListResponse, error) {
+	path := fmt.Sprintf("_apis/git/pullrequests?searchCriteria.status=%s&%s=%s",
+		url.QueryEscape(status), searchParam, url.QueryEscape(userID))
+
+	body, statusCode, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkResponse(statusCode, body); err != nil {
+		return nil, err
+	}
+
+	var result types.PRListResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("decode response: %w", err)
+	}
+	return &result, nil
+}
+
 // ResolveIdentityID resolves a display name or domain\username to a GUID via the Identity API.
 func (c *Client) ResolveIdentityID(searchValue string) (string, error) {
 	path := "_apis/identities?searchFilter=General&filterValue=" + url.QueryEscape(searchValue)

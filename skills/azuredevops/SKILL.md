@@ -1,6 +1,6 @@
 ---
 name: azuredevops
-description: "Manage Azure DevOps projects, repositories, and pull requests. Trigger when user asks about: pull request, PR, code review, merge, Azure DevOps, TFS, DevOps repo, DevOps project."
+description: "Manage Azure DevOps projects, repositories, and pull requests. Trigger when user asks about: pull request, PR, code review, merge, Azure DevOps, TFS, DevOps repo, DevOps project, my PRs, assigned PRs, pending reviews."
 user-invokable: true
 argument-hint: "[action, e.g. 'list PRs', 'create PR', 'approve PR 123']"
 ---
@@ -17,6 +17,7 @@ Activate when user asks to:
 - Approve or reject a PR (code review)
 - Add comments or reviewers to a PR
 - Merge a PR (via status update to "completed")
+- Find PRs assigned to you or created by you (cross-project)
 
 ## Prerequisites
 
@@ -68,6 +69,12 @@ Returns all Git repositories in the specified project.
 ${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh prs --project <ProjectName> --repo <RepoName> [--status active|completed|abandoned|all]
 ```
 Default status is `active`. The `--repo` flag accepts the repository name (not GUID).
+
+### List my pull requests (cross-project)
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh my-prs [--status active|completed|abandoned|all] [--role all|creator|reviewer] [--project <ProjectName>]
+```
+Returns pull requests across all projects where the authenticated user is a creator, reviewer, or both. Default status is `active`, default role is `all`. Use `--project` to filter results to a specific project. Does not require `--repo`. Each PR includes `project`, `repo`, and `roles` fields indicating the user's relationship to the PR.
 
 ### View pull request details
 ```bash
@@ -129,6 +136,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh version
 - **Vote semantics**: 10=approved, 5=approved with suggestions, 0=no vote, -5=waiting for author, -10=rejected
 - **Merge via update**: To merge a PR, use `pr-update --status completed`
 - **Abandon via update**: To close without merging, use `pr-update --status abandoned`
+- **Cross-project search**: `my-prs` searches across all projects — no `--project` or `--repo` required
 - **Authentication**: Uses IIS Basic Auth — ensure the server has Basic Auth enabled in IIS
 
 ## Workflow
@@ -138,6 +146,11 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh version
 2. **View** details: `pr --project X --repo Y --id 123`
 3. **Comment** if needed: `pr-comment --project X --repo Y --id 123 --comment "Looks good"`
 4. **Approve**: `pr-approve --project X --repo Y --id 123`
+
+### Find and review your PRs
+1. **List** your PRs across all projects: `my-prs`
+2. **View** details: `pr --project X --repo Y --id 123`
+3. **Approve**: `pr-approve --project X --repo Y --id 123`
 
 ### Create and merge a PR
 1. **Create**: `pr-create --project X --repo Y --source feature/abc --target main --title "Add feature"`
