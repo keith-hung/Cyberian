@@ -76,7 +76,7 @@ REST API client for Azure DevOps Server (on-premises, IIS Basic Auth). Manages p
 
 Commands: `projects`, `repos`, `prs`, `pr`, `pr-create`, `pr-update`, `pr-approve`, `pr-reject`, `pr-comment`, `pr-reviewers`, `pr-add-reviewer`, `version`
 
-Config via env vars: `AZDO_BASE_URL`, `AZDO_COLLECTION`, `AZDO_DOMAIN` (optional), `AZDO_USERNAME`, `AZDO_PASSWORD`, `AZDO_PROJECT` (optional), `AZDO_REPO` (optional), `AZDO_API_VERSION` (optional, default: 5.0)
+Config via env vars: `AZDO_BASE_URL`, `AZDO_COLLECTION`, `AZDO_DOMAIN` (optional), `AZDO_USERNAME`, `AZDO_PASSWORD`, `AZDO_PROJECT` (optional), `AZDO_REPO` (optional), `AZDO_API_VERSION` (optional, default: 5.0), `AZDO_INSECURE` (optional, skip TLS verification)
 
 ### Shared CLI patterns
 
@@ -92,7 +92,7 @@ The plugin (`plugin.json`) registers five skills that Claude Code activates base
 
 Launcher scripts in `scripts/` auto-download platform-appropriate binaries from GitHub Releases on first run, caching them in `.cache/`. The jira launcher also auto-initializes `jira-cli` config from env vars.
 
-All 21 env vars across 5 skills can be centrally configured in `.claude/settings.local.json` (copy from `settings.json.example`). Shell profile exports also work and take precedence over settings.json values.
+All 22 env vars across 5 skills can be centrally configured in `.claude/settings.local.json` (copy from `settings.json.example`). Shell profile exports also work and take precedence over settings.json values.
 
 ## Key Conventions
 

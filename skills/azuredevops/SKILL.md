@@ -32,6 +32,7 @@ The following environment variables must be set:
 | `AZDO_PROJECT` | No | Default project name |
 | `AZDO_REPO` | No | Default repository name |
 | `AZDO_API_VERSION` | No | API version (default: `5.0`) |
+| `AZDO_INSECURE` | No | Set to `true` to skip TLS certificate verification (for self-signed certs) |
 
 If `AZDO_DOMAIN` is set and `AZDO_USERNAME` does not contain `\`, the CLI auto-combines them as `DOMAIN\username` for Basic Auth. You can also set `AZDO_USERNAME` directly to `DOMAIN\user` and omit `AZDO_DOMAIN`.
 
