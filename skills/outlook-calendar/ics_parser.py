@@ -407,11 +407,13 @@ Examples:
     all_events = []
 
     if urls:
+        fetch_failures = 0
         for i, url in enumerate(urls):
             try:
                 ics_content = fetch_ics(url)
             except Exception as e:
                 print(f"Error: Failed to fetch ICS from URL {i + 1}. ({e})", file=sys.stderr)
+                fetch_failures += 1
                 continue
 
             cal_name = extract_calendar_name(ics_content) or f"Calendar {i + 1}"
@@ -424,6 +426,10 @@ Examples:
 
             events = parse_ics(ics_content, range_start, range_end, cal_name)
             all_events.extend(events)
+
+        if fetch_failures == len(urls):
+            print("Error: All ICS URLs failed to fetch.", file=sys.stderr)
+            sys.exit(4)
 
     elif not sys.stdin.isatty():
         ics_content = sys.stdin.read()
