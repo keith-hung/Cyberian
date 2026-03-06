@@ -2,6 +2,17 @@
 
 此檔案記錄本專案各版本的重要變更。
 
+## [0.2.2] - 2026-03-06
+
+### 變更
+
+- outlook-calendar skill 支援多個行事曆 — 環境變數改為 `OUTLOOK_ICS_URLS`（逗號分隔多個 ICS URL），自動從 `X-WR-CALNAME` 取得行事曆名稱，新增 `--calendar` 篩選參數
+- `OUTLOOK_ICS_URL`（單數）已棄用，CLI 偵測到舊環境變數時會提示遷移
+
+### 修正
+
+- 所有 ICS URL 取得失敗時，改為 exit code 4 並輸出明確錯誤訊息（原本靜默顯示「No events found」）
+
 ## [0.2.1] - 2026-03-04
 
 ### 新增

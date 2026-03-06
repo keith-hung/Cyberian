@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO="keith-hung/Cyberian"
-VERSION="v0.2.1"
+VERSION="v0.2.2"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CACHE_DIR="$SCRIPT_DIR/.cache"
 BIN="$CACHE_DIR/azuredevops-cli"
