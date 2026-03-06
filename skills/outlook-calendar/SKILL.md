@@ -186,6 +186,7 @@ Output shows (per calendar):
 | No events found | Check date range matches your query |
 | Script not found | Verify `${CLAUDE_PLUGIN_ROOT}` resolves correctly |
 | `OUTLOOK_ICS_URLS` not set | Set the env var in shell profile: `export OUTLOOK_ICS_URLS="..."` |
+| Was using `OUTLOOK_ICS_URL` | Rename to `OUTLOOK_ICS_URLS` (plural). The singular form is no longer supported |
 | Calendar name shows "Calendar 1" | The ICS feed lacks `X-WR-CALNAME`; this is a cosmetic fallback |
 
 ## Error Handling

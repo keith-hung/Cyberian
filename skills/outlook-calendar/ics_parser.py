@@ -444,8 +444,10 @@ Examples:
         events = parse_ics(ics_content, range_start, range_end, cal_name)
         all_events.extend(events)
     else:
-        print("Error: Provide --url, set OUTLOOK_ICS_URLS env var, or pipe ICS content via stdin",
-              file=sys.stderr)
+        msg = "Error: Provide --url, set OUTLOOK_ICS_URLS env var, or pipe ICS content via stdin"
+        if os.environ.get('OUTLOOK_ICS_URL'):
+            msg += "\nNote: OUTLOOK_ICS_URL (singular) is no longer supported. Use OUTLOOK_ICS_URLS instead."
+        print(msg, file=sys.stderr)
         sys.exit(1)
 
     if args.debug:
