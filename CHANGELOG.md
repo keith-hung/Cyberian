@@ -15,8 +15,20 @@
 - **azuredevops-cli** — 全新 Go CLI，支援 Azure DevOps Server（地端）的 IIS Basic Auth，提供 12 個命令：`projects`、`repos`、`prs`、`pr`、`pr-create`、`pr-update`、`pr-approve`、`pr-reject`、`pr-comment`、`pr-reviewers`、`pr-add-reviewer`、`version`
 - azuredevops skill 定義檔（`skills/azuredevops/SKILL.md`）
 - azuredevops-cli launcher 腳本（`.sh` 與 `.ps1`）
+
+## [0.1.0] - 2026-03-03
+
+### 新增
+
+- **timecard-cli** — Go CLI，透過 HTML scraping 管理 TimeCard 工時表，支援命令：`projects`、`activities`、`timesheet`、`summary`、`save`、`version`
+- **wedaka-cli** — Go CLI，透過 REST API 管理 WeDaka 出勤系統，支援命令：`clock-in`、`clock-out`、`timelog`、`check-workday`、`version`
+- Claude Code plugin，包含四個 skills：timecard、wedaka、jira、outlook-calendar
+- JIRA skill，含自動下載 `jira-cli` binary 的 launcher 腳本
+- Outlook calendar skill，含 ICS 訂閱解析器
 - Marketplace manifest（`.claude-plugin/marketplace.json`），支援透過 `claude plugin marketplace add` 安裝
-- README 新增依 scope 分類的 plugin 安裝與設定指南（user / project / local）
+- PowerShell launcher 腳本，支援 Windows
+- 跨平台 build 腳本與 GitHub Actions release workflow
+- MIT 授權條款
 
 ### 變更
 
@@ -28,16 +40,3 @@
 
 - 修正 marketplace 與 plugin 同名導致 Linux 上安裝靜默失敗的問題
 - 修正 jira-cli tar 解壓縮路徑錯誤
-
-## [0.1.0] - 2026-03-03
-
-### 新增
-
-- **timecard-cli** — Go CLI，透過 HTML scraping 管理 TimeCard 工時表，支援命令：`projects`、`activities`、`timesheet`、`summary`、`save`、`version`
-- **wedaka-cli** — Go CLI，透過 REST API 管理 WeDaka 出勤系統，支援命令：`clock-in`、`clock-out`、`timelog`、`check-workday`、`version`
-- Claude Code plugin，包含五個 skills：timecard、wedaka、jira、outlook-calendar、azuredevops
-- JIRA skill，含自動下載 `jira-cli` binary 的 launcher 腳本
-- Outlook calendar skill，含 ICS 訂閱解析器
-- PowerShell launcher 腳本，支援 Windows
-- 跨平台 build 腳本與 GitHub Actions release workflow
-- MIT 授權條款
