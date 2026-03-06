@@ -7,17 +7,23 @@
 ICS Parser for Outlook Calendar Skill
 
 Parses ICS content and expands recurring events (RRULE) within a date range.
+Supports multiple calendars via OUTLOOK_ICS_URLS (comma-separated).
 
 Usage:
-    # From URL
-    uv run ics_parser.py --url "https://outlook.office365.com/..." --start 2025-12-01 --end 2025-12-31
+    # From env var (multiple calendars)
+    uv run ics_parser.py --start 2025-12-01 --end 2025-12-31
+
+    # From explicit URLs
+    uv run ics_parser.py --url "https://..." --url "https://..." --start 2025-12-01 --end 2025-12-31
 
     # From stdin
     curl -s "https://..." | uv run ics_parser.py --start 2025-12-01 --end 2025-12-31
 
+    # Filter by calendar name
+    uv run ics_parser.py --start 2025-12-01 --end 2025-12-31 --calendar "Work"
+
     # Output formats
-    uv run ics_parser.py --url "..." --start 2025-12-01 --end 2025-12-31 --format table
-    uv run ics_parser.py --url "..." --start 2025-12-01 --end 2025-12-31 --format json
+    uv run ics_parser.py --start 2025-12-01 --end 2025-12-31 --format json
 
 Dependencies:
     - python-dateutil (auto-installed by uv)
@@ -248,7 +254,16 @@ def expand_rrule(event: dict, range_start: datetime, range_end: datetime) -> lis
     return expand_rrule_fallback(event, range_start, range_end)
 
 
-def parse_ics(ics_content: str, range_start: datetime, range_end: datetime) -> list:
+def extract_calendar_name(ics_content: str) -> str:
+    """Extract calendar name from X-WR-CALNAME property."""
+    match = re.search(r'X-WR-CALNAME:(.*)', ics_content)
+    if match:
+        return match.group(1).strip()
+    return ''
+
+
+def parse_ics(ics_content: str, range_start: datetime, range_end: datetime,
+              calendar_name: str = '') -> list:
     """Parse ICS content and return events within the date range."""
     # Split into VEVENT blocks
     vevent_pattern = re.compile(r'BEGIN:VEVENT(.*?)END:VEVENT', re.DOTALL)
@@ -261,6 +276,8 @@ def parse_ics(ics_content: str, range_start: datetime, range_end: datetime) -> l
         if not event:
             continue
 
+        event['calendar'] = calendar_name
+
         if event.get('rrule'):
             # Recurring event: expand within range
             occurrences = expand_rrule(event, range_start, range_end)
@@ -272,20 +289,21 @@ def parse_ics(ics_content: str, range_start: datetime, range_end: datetime) -> l
             if range_start <= dtstart <= range_end:
                 all_events.append(event)
 
-    # Sort by start time
-    all_events.sort(key=lambda e: e['dtstart'])
-
     return all_events
 
 
-def format_event_table(events: list) -> str:
+def format_event_table(events: list, show_calendar: bool = False) -> str:
     """Format events as a markdown table."""
     if not events:
         return "No events found in the specified date range."
 
     lines = []
-    lines.append("| Date | Time | Event | Location |")
-    lines.append("|------|------|-------|----------|")
+    if show_calendar:
+        lines.append("| Date | Time | Event | Location | Calendar |")
+        lines.append("|------|------|-------|----------|----------|")
+    else:
+        lines.append("| Date | Time | Event | Location |")
+        lines.append("|------|------|-------|----------|")
 
     for event in events:
         dtstart = event['dtstart']
@@ -312,23 +330,30 @@ def format_event_table(events: list) -> str:
         if event.get('is_recurring'):
             summary = f"🔄 {summary}"
 
-        lines.append(f"| {date_str} | {time_str} | {summary} | {location} |")
+        if show_calendar:
+            calendar = event.get('calendar', '')
+            lines.append(f"| {date_str} | {time_str} | {summary} | {location} | {calendar} |")
+        else:
+            lines.append(f"| {date_str} | {time_str} | {summary} | {location} |")
 
     return '\n'.join(lines)
 
 
-def format_event_json(events: list) -> str:
+def format_event_json(events: list, show_calendar: bool = False) -> str:
     """Format events as JSON."""
     output = []
     for event in events:
-        output.append({
+        entry = {
             'date': event['dtstart'].strftime('%Y-%m-%d'),
             'start': event['dtstart'].strftime('%H:%M'),
             'end': event['dtend'].strftime('%H:%M') if event.get('dtend') else None,
             'summary': event.get('summary', ''),
             'location': event.get('location', ''),
             'is_recurring': event.get('is_recurring', False),
-        })
+        }
+        if show_calendar:
+            entry['calendar'] = event.get('calendar', '')
+        output.append(entry)
     return json.dumps(output, indent=2, ensure_ascii=False)
 
 
@@ -345,14 +370,18 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --url "https://..." --start 2025-12-01 --end 2025-12-31
-  %(prog)s --start 2025-12-01 --end 2025-12-31 < calendar.ics
-  %(prog)s --url "https://..." --start 2025-12-01 --end 2025-12-31 --format json
+  %(prog)s --start 2025-12-01 --end 2025-12-31
+  %(prog)s --url "https://..." --url "https://..." --start 2025-12-01 --end 2025-12-31
+  %(prog)s --start 2025-12-01 --end 2025-12-31 --calendar "Work"
+  %(prog)s --start 2025-12-01 --end 2025-12-31 --format json
+  cat calendar.ics | %(prog)s --start 2025-12-01 --end 2025-12-31
         """
     )
-    parser.add_argument('--url', help='ICS URL to fetch (falls back to OUTLOOK_ICS_URL env var)')
+    parser.add_argument('--url', action='append', dest='urls',
+                        help='ICS URL to fetch (can be specified multiple times)')
     parser.add_argument('--start', required=True, help='Start date (YYYY-MM-DD)')
     parser.add_argument('--end', required=True, help='End date (YYYY-MM-DD)')
+    parser.add_argument('--calendar', help='Filter by calendar name (substring match)')
     parser.add_argument('--format', choices=['table', 'json'], default='table',
                         help='Output format (default: table)')
     parser.add_argument('--debug', action='store_true', help='Show debug info')
@@ -367,41 +396,83 @@ Examples:
         print(f"Error: Invalid date format. Use YYYY-MM-DD. ({e})", file=sys.stderr)
         sys.exit(1)
 
-    # Resolve ICS URL: --url flag > OUTLOOK_ICS_URL env var
-    url = args.url or os.environ.get('OUTLOOK_ICS_URL')
+    # Resolve ICS URLs: --url flags > OUTLOOK_ICS_URLS env var
+    urls = args.urls or []
+    if not urls:
+        env_urls = os.environ.get('OUTLOOK_ICS_URLS', '')
+        if env_urls:
+            urls = [u.strip() for u in env_urls.split(',') if u.strip()]
 
-    # Get ICS content
-    if url:
-        try:
-            ics_content = fetch_ics(url)
-        except Exception as e:
-            print(f"Error: Failed to fetch ICS. ({e})", file=sys.stderr)
-            sys.exit(1)
+    # Collect all events from all sources
+    all_events = []
+
+    if urls:
+        fetch_failures = 0
+        for i, url in enumerate(urls):
+            try:
+                ics_content = fetch_ics(url)
+            except Exception as e:
+                print(f"Error: Failed to fetch ICS from URL {i + 1}. ({e})", file=sys.stderr)
+                fetch_failures += 1
+                continue
+
+            cal_name = extract_calendar_name(ics_content) or f"Calendar {i + 1}"
+
+            if args.debug:
+                vevent_count = ics_content.count('BEGIN:VEVENT')
+                rrule_count = ics_content.count('RRULE:')
+                print(f"Debug [{cal_name}]: Total VEVENTs: {vevent_count}", file=sys.stderr)
+                print(f"Debug [{cal_name}]: Recurring events: {rrule_count}", file=sys.stderr)
+
+            events = parse_ics(ics_content, range_start, range_end, cal_name)
+            all_events.extend(events)
+
+        if fetch_failures == len(urls):
+            print("Error: All ICS URLs failed to fetch.", file=sys.stderr)
+            sys.exit(4)
+
     elif not sys.stdin.isatty():
         ics_content = sys.stdin.read()
+        cal_name = extract_calendar_name(ics_content) or 'Calendar'
+
+        if args.debug:
+            vevent_count = ics_content.count('BEGIN:VEVENT')
+            rrule_count = ics_content.count('RRULE:')
+            print(f"Debug [{cal_name}]: Total VEVENTs: {vevent_count}", file=sys.stderr)
+            print(f"Debug [{cal_name}]: Recurring events: {rrule_count}", file=sys.stderr)
+
+        events = parse_ics(ics_content, range_start, range_end, cal_name)
+        all_events.extend(events)
     else:
-        print("Error: Provide --url, set OUTLOOK_ICS_URL env var, or pipe ICS content via stdin", file=sys.stderr)
+        msg = "Error: Provide --url, set OUTLOOK_ICS_URLS env var, or pipe ICS content via stdin"
+        if os.environ.get('OUTLOOK_ICS_URL'):
+            msg += "\nNote: OUTLOOK_ICS_URL (singular) is no longer supported. Use OUTLOOK_ICS_URLS instead."
+        print(msg, file=sys.stderr)
         sys.exit(1)
 
-    # Debug info
     if args.debug:
-        vevent_count = ics_content.count('BEGIN:VEVENT')
-        rrule_count = ics_content.count('RRULE:')
-        print(f"Debug: Total VEVENTs: {vevent_count}", file=sys.stderr)
-        print(f"Debug: Recurring events: {rrule_count}", file=sys.stderr)
         print(f"Debug: dateutil available: {HAS_DATEUTIL}", file=sys.stderr)
 
-    # Parse and expand
-    events = parse_ics(ics_content, range_start, range_end)
+    # Filter by calendar name
+    if args.calendar:
+        filter_name = args.calendar.lower()
+        all_events = [e for e in all_events if filter_name in e.get('calendar', '').lower()]
+
+    # Sort by start time
+    all_events.sort(key=lambda e: e['dtstart'])
 
     if args.debug:
-        print(f"Debug: Events in range: {len(events)}", file=sys.stderr)
+        print(f"Debug: Events in range: {len(all_events)}", file=sys.stderr)
+
+    # Determine if we should show calendar column
+    unique_calendars = set(e.get('calendar', '') for e in all_events)
+    show_calendar = len(unique_calendars) > 1 or args.calendar is not None
 
     # Output
     if args.format == 'json':
-        print(format_event_json(events))
+        print(format_event_json(all_events, show_calendar))
     else:
-        print(format_event_table(events))
+        print(format_event_table(all_events, show_calendar))
 
 
 if __name__ == '__main__':

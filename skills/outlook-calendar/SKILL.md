@@ -7,7 +7,7 @@ description: "Read Outlook calendar events via ICS subscription. Use when user a
 
 ## Overview
 
-This skill reads calendar events from Outlook via ICS subscription URL.
+This skill reads calendar events from Outlook via ICS subscription URLs. Supports multiple calendars.
 
 ## When to Use
 
@@ -18,18 +18,22 @@ This skill reads calendar events from Outlook via ICS subscription URL.
 
 ## Prerequisites
 
-The environment variable `OUTLOOK_ICS_URL` must be set to your ICS subscription URL.
+The environment variable `OUTLOOK_ICS_URLS` must be set to one or more ICS subscription URLs (comma-separated).
 
 **Option A — Centralized config (recommended):**
-Copy `.claude/settings.json.example` to `.claude/settings.local.json` and fill in the `OUTLOOK_ICS_URL` value.
+Copy `.claude/settings.json.example` to `.claude/settings.local.json` and fill in the `OUTLOOK_ICS_URLS` value.
 
 **Option B — Shell profile:**
 Export the variable in `~/.zshrc` or `~/.bashrc`:
 ```bash
-export OUTLOOK_ICS_URL="https://outlook.office365.com/owa/calendar/..."
+# Single calendar
+export OUTLOOK_ICS_URLS="https://outlook.office365.com/owa/calendar/.../reachcalendar.ics"
+
+# Multiple calendars (comma-separated)
+export OUTLOOK_ICS_URLS="https://outlook.office365.com/.../cal1.ics,https://outlook.office365.com/.../cal2.ics"
 ```
 
-If `OUTLOOK_ICS_URL` is not set, the script will exit with an error.
+Calendar names are automatically extracted from each ICS feed's `X-WR-CALNAME` property.
 
 ## Execution Steps
 
@@ -43,28 +47,37 @@ The skill includes `ics_parser.py` that handles all parsing and RRULE expansion.
 # Get today's date
 TODAY=$(date +%Y-%m-%d)
 
-# Parse events for today
+# Parse events for today (all calendars)
 uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --url "$OUTLOOK_ICS_URL" \
   --start "$TODAY" \
   --end "$TODAY"
 
 # Parse events for a date range
 uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --url "$OUTLOOK_ICS_URL" \
   --start 2025-12-01 \
   --end 2025-12-31
 
+# Filter by calendar name (substring match)
+uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
+  --start "$TODAY" \
+  --end "$TODAY" \
+  --calendar "Work"
+
+# Specify URLs directly (ignores env var)
+uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
+  --url "https://...cal1.ics" \
+  --url "https://...cal2.ics" \
+  --start "$TODAY" \
+  --end "$TODAY"
+
 # Output as JSON
 uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --url "$OUTLOOK_ICS_URL" \
   --start 2025-12-01 \
   --end 2025-12-31 \
   --format json
 
-# Debug mode (shows event counts)
+# Debug mode (shows event counts per calendar)
 uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --url "$OUTLOOK_ICS_URL" \
   --start 2025-12-01 \
   --end 2025-12-31 \
   --debug
@@ -74,7 +87,7 @@ uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
 
 If the script is not available, use WebFetch and parse manually:
 
-1. **Fetch ICS**: Use WebFetch to retrieve the ICS URL
+1. **Fetch ICS**: Use WebFetch to retrieve each ICS URL
 2. **Parse Events**: Extract VEVENT blocks
 3. **Handle RRULE**: Expand recurring events (see RRULE Reference below)
 4. **Filter & Format**: Filter by date range and output as table
@@ -83,22 +96,25 @@ If the script is not available, use WebFetch and parse manually:
 
 The `ics_parser.py` script handles:
 
+- Multiple calendars with auto-detected names (X-WR-CALNAME)
+- `--calendar` filter for viewing specific calendars
 - All 3 DTSTART formats (UTC, TZID, all-day)
 - RRULE expansion (WEEKLY, DAILY with BYDAY, INTERVAL, UNTIL, COUNT)
 - Automatic timezone conversion (UTC → Taipei UTC+8)
 - Dependencies auto-installed by uv
 - Table or JSON output format
+- Calendar column shown automatically when multiple calendars are present
 - Debug mode for troubleshooting
 
 ## Output Format
 
-The script outputs a markdown table:
+The script outputs a markdown table. When multiple calendars are present, a Calendar column is included:
 
-| Date | Time | Event | Location |
-|------|------|-------|----------|
-| 2025-12-02 (Tue) | 10:30-11:00 | 🔄 Standup Meeting | Microsoft Teams |
-| 2025-12-02 (Tue) | 14:00-15:00 | 🔄 Weekly Meeting | Conference Room |
-| 2025-12-03 (Wed) | 09:00-10:00 | Project Review | Zoom |
+| Date | Time | Event | Location | Calendar |
+|------|------|-------|----------|----------|
+| 2025-12-02 (Tue) | 10:30-11:00 | 🔄 Standup Meeting | Microsoft Teams | Work |
+| 2025-12-02 (Tue) | 14:00-15:00 | 🔄 Weekly Meeting | Conference Room | Work |
+| 2025-12-03 (Wed) | 12:00-13:00 | Lunch | — | Personal |
 
 - 🔄 indicates a recurring event
 
@@ -142,6 +158,8 @@ Outlook ICS uses 3 different formats:
 - "Show my calendar for this week"
 - "Am I free tomorrow afternoon?"
 - "What's on my schedule for 12/5?"
+- "Show my Work calendar for this week"
+- "What meetings are on my Personal calendar today?"
 
 ## Troubleshooting
 
@@ -150,10 +168,11 @@ Outlook ICS uses 3 different formats:
 ```bash
 # Run with debug flag
 uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --url "..." --start 2025-12-01 --end 2025-12-31 --debug
+  --start 2025-12-01 --end 2025-12-31 --debug
 ```
 
-Output shows:
+Output shows (per calendar):
+- Calendar name (from X-WR-CALNAME)
 - Total VEVENTs in ICS
 - Number of recurring events
 - Whether dateutil is available
@@ -166,11 +185,14 @@ Output shows:
 | `uv: command not found` | Install uv: `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | No events found | Check date range matches your query |
 | Script not found | Verify `${CLAUDE_PLUGIN_ROOT}` resolves correctly |
-| `OUTLOOK_ICS_URL` not set | Set the env var in shell profile: `export OUTLOOK_ICS_URL="..."` |
+| `OUTLOOK_ICS_URLS` not set | Set the env var in shell profile: `export OUTLOOK_ICS_URLS="..."` |
+| Was using `OUTLOOK_ICS_URL` | Rename to `OUTLOOK_ICS_URLS` (plural). The singular form is no longer supported |
+| Calendar name shows "Calendar 1" | The ICS feed lacks `X-WR-CALNAME`; this is a cosmetic fallback |
 
 ## Error Handling
 
-- If `OUTLOOK_ICS_URL` is not set: Guide user to set the env var in their shell profile
+- If `OUTLOOK_ICS_URLS` is not set: Guide user to set the env var in their shell profile
 - If uv not found: Install uv first
+- If a URL fails to fetch: Skip it with error message, continue with remaining URLs
 - If no events found: Confirm the date range and calendar permissions
-- If parsing fails: Use `--debug` flag to see event counts
+- If parsing fails: Use `--debug` flag to see event counts per calendar

@@ -15,7 +15,7 @@
     "JIRA_PROJECT": "PROJ",
     "JIRA_BOARD": "My Board",
 
-    "OUTLOOK_ICS_URL": "https://outlook.office365.com/owa/calendar/.../reachcalendar.ics",
+    "OUTLOOK_ICS_URLS": "https://outlook.office365.com/.../cal1.ics,https://outlook.office365.com/.../cal2.ics",
 
     "AZDO_BASE_URL": "https://your-tfs-server.example.com:8080/tfs",
     "AZDO_COLLECTION": "DefaultCollection",
