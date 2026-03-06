@@ -53,7 +53,7 @@ claude plugin install cyberian@cyberian-marketplace
     "JIRA_API_TOKEN": "your_api_token",
     "JIRA_PROJECT": "PROJ",
     "JIRA_BOARD": "My Board",
-    "OUTLOOK_ICS_URL": "https://outlook.office365.com/owa/calendar/.../reachcalendar.ics",
+    "OUTLOOK_ICS_URLS": "https://outlook.office365.com/.../cal1.ics,https://outlook.office365.com/.../cal2.ics",
     "AZDO_BASE_URL": "https://your-tfs-server.example.com:8080/tfs",
     "AZDO_COLLECTION": "DefaultCollection",
     "AZDO_DOMAIN": "DOMAIN",
@@ -132,7 +132,7 @@ export TIMECARD_PASSWORD="your_password"
 | **TimeCard** 工時表 | `TIMECARD_BASE_URL`、`TIMECARD_USERNAME`、`TIMECARD_PASSWORD`            |
 | **WeDaka** 打卡     | `WEDAKA_API_URL`、`WEDAKA_USERNAME`、`WEDAKA_EMP_NO`、`WEDAKA_DEVICE_ID` |
 | **JIRA**            | `JIRA_SERVER_URL`、`JIRA_USER_EMAIL`、`JIRA_API_TOKEN`、`JIRA_PROJECT`、`JIRA_BOARD` |
-| **Outlook 行事曆**  | `OUTLOOK_ICS_URL`                                                        |
+| **Outlook 行事曆**  | `OUTLOOK_ICS_URLS`                                                       |
 | **Azure DevOps**    | `AZDO_BASE_URL`、`AZDO_COLLECTION`、`AZDO_DOMAIN`、`AZDO_USERNAME`、`AZDO_PASSWORD`、`AZDO_PROJECT`*、`AZDO_REPO`*、`AZDO_API_VERSION`*、`AZDO_INSECURE`* |
 
 </details>
