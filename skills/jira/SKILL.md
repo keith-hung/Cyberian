@@ -1,6 +1,6 @@
 ---
 name: jira
-description: "Use this skill when the user asks to interact with JIRA — including listing, viewing, creating, editing, moving, assigning, commenting on, or searching issues, as well as managing epics, sprints, and boards. Also use when the user mentions JIRA issue keys (e.g., PROJ-123), asks about project status, or wants to perform any JIRA-related workflow."
+description: "Use this skill when the user asks to interact with JIRA — including listing, viewing, creating, editing, moving, assigning, commenting on, or searching issues, as well as managing epics, sprints, and boards. Also use when the user mentions JIRA issue keys (e.g., PROJ-123), asks about project status, wants to perform any JIRA-related workflow, or needs to get/set custom fields (e.g., Reviewers, PR reviewer) via REST API."
 user-invokable: true
 argument-hint: "[action or issue key, e.g. 'list', 'PROJ-123', 'create bug']"
 ---
@@ -126,6 +126,105 @@ When presenting JIRA data to the user:
 - If a command fails, check the error message and suggest fixes
 - Common issues: expired token, wrong project key, invalid status name
 - For permission errors, inform the user they may lack JIRA project access
+
+## Custom Field Operations (REST API)
+
+The `jira-cli` does not support custom fields. For custom field operations, use the JIRA REST API directly via `curl` with the same environment variables.
+
+### 1. List Custom Fields
+
+Find custom field IDs by name:
+```bash
+curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+  "$JIRA_SERVER_URL/rest/api/3/field" \
+  | python3 -c "
+import sys, json
+fields = json.load(sys.stdin)
+for f in fields:
+    if '<search_term>' in f.get('name','').lower():
+        print(f'{f[\"id\"]}: {f[\"name\"]} (custom={f.get(\"custom\", False)})')
+"
+```
+
+### 2. Get Custom Field Value
+
+```bash
+curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+  "$JIRA_SERVER_URL/rest/api/3/issue/PROJ-123" \
+  | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print(d['fields'].get('<customfield_id>', 'Not set'))
+"
+```
+
+### 3. Search Users (for user-type fields)
+
+Find a user's `accountId` by name or email:
+```bash
+curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+  "$JIRA_SERVER_URL/rest/api/3/user/search?query=<name_or_email>" \
+  | python3 -c "
+import sys, json
+for u in json.load(sys.stdin):
+    print(f'accountId: {u[\"accountId\"]}, name: {u[\"displayName\"]}, email: {u.get(\"emailAddress\",\"N/A\")}')
+"
+```
+
+### 4. Set Custom Field Value
+
+**User-type field** (single user):
+```bash
+curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+  -X PUT -H "Content-Type: application/json" \
+  "$JIRA_SERVER_URL/rest/api/3/issue/PROJ-123" \
+  -d '{"fields":{"<customfield_id>":{"accountId":"<account_id>"}}}'
+```
+
+**User-type field** (multi-user, e.g., Reviewers):
+```bash
+curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+  -X PUT -H "Content-Type: application/json" \
+  "$JIRA_SERVER_URL/rest/api/3/issue/PROJ-123" \
+  -d '{"fields":{"<customfield_id>":[{"accountId":"<account_id>"}]}}'
+```
+
+**Text field**:
+```bash
+curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+  -X PUT -H "Content-Type: application/json" \
+  "$JIRA_SERVER_URL/rest/api/3/issue/PROJ-123" \
+  -d '{"fields":{"<customfield_id>":"value"}}'
+```
+
+**Select field**:
+```bash
+curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+  -X PUT -H "Content-Type: application/json" \
+  "$JIRA_SERVER_URL/rest/api/3/issue/PROJ-123" \
+  -d '{"fields":{"<customfield_id>":{"value":"Option Name"}}}'
+```
+
+### 5. Inspect Field Schema
+
+Check a custom field's expected data type before setting it:
+```bash
+curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+  "$JIRA_SERVER_URL/rest/api/3/field" \
+  | python3 -c "
+import sys, json
+for f in json.load(sys.stdin):
+    if f['id'] == '<customfield_id>':
+        print(json.dumps(f.get('schema', {}), indent=2))
+"
+```
+
+### Custom Field Workflow Example
+
+To set a "Reviewers" field on an issue:
+1. Find the field ID: search for `review` in custom fields
+2. Search for the user to get their `accountId`
+3. Set the field using the multi-user payload format
 
 ## Detailed Command Reference
 
