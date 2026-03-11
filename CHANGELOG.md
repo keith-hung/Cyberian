@@ -4,9 +4,18 @@
 
 ## [Unreleased]
 
+### 新增
+
+- azuredevops-cli `pr-comment` 新增 `--thread-id` 旗標 — 可回覆既有的留言 thread
+
 ### 變更
 
 - 全部三個 CLI（timecard-cli、wedaka-cli、azuredevops-cli）從手動 flag parsing 重構為使用 [cobra](https://github.com/spf13/cobra)，支援所有命令的 `--help` 輸出、自動 flag 驗證、global/local flag 區分顯示
+
+### 修正
+
+- `CreateThread` 改為回傳新建 thread 的 ID — `pr-comment` 建立新 thread 時，輸出 JSON 現在包含正確的 `thread_id`
+- `PRCommentOutput.ThreadID` 移除 `omitempty`，與其他 output struct 的 `int` 欄位一致
 
 ## [0.2.4] - 2026-03-11
 
