@@ -98,7 +98,7 @@ type APIThread struct {
 type APIComment struct {
 	ID              int         `json:"id"`
 	Content         string      `json:"content"`
-	CommentType     int         `json:"commentType"`
+	CommentType     string      `json:"commentType"`
 	ParentCommentID int         `json:"parentCommentId"`
 	Author          APIIdentity `json:"author"`
 	PublishedDate   string      `json:"publishedDate"`
@@ -161,7 +161,7 @@ type ThreadBody struct {
 type ThreadComment struct {
 	ParentCommentID int    `json:"parentCommentId"`
 	Content         string `json:"content"`
-	CommentType     int    `json:"commentType"`
+	CommentType     string `json:"commentType"`
 }
 
 // --- CLI output types ---

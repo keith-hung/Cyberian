@@ -294,7 +294,7 @@ func (c *Client) CreateThread(project, repoID string, prID int, comment string) 
 			{
 				ParentCommentID: 0,
 				Content:         comment,
-				CommentType:     1,
+				CommentType:     "text",
 			},
 		},
 		Status: 1,
