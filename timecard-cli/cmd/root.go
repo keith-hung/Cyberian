@@ -1,4 +1,4 @@
-// Package cmd implements CLI subcommand routing and global flag handling.
+// Package cmd implements CLI commands using cobra.
 package cmd
 
 import (
@@ -10,6 +10,7 @@ import (
 
 	"github.com/keith-hung/timecard-cli/internal/session"
 	"github.com/keith-hung/timecard-cli/internal/types"
+	"github.com/spf13/cobra"
 )
 
 // GlobalFlags holds the parsed global flags.
@@ -19,53 +20,54 @@ type GlobalFlags struct {
 	Pass        string
 	SessionFile string
 	Pretty      bool
-	PassStdin   bool // read password from stdin
+	PassStdin   bool
 }
 
-// ParseGlobalFlags extracts global flags from args (which may be interleaved
-// with subcommand flags). Returns parsed global flags and remaining args.
-func ParseGlobalFlags(args []string) (*GlobalFlags, []string) {
-	gf := &GlobalFlags{
-		URL:         envOrDefault("TIMECARD_BASE_URL", ""),
-		User:        envOrDefault("TIMECARD_USERNAME", ""),
-		Pass:        envOrDefault("TIMECARD_PASSWORD", ""),
-		SessionFile: ".timecard-session.json",
-	}
+var gf GlobalFlags
 
-	var remaining []string
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		switch {
-		case arg == "--url" && i+1 < len(args):
-			i++
-			gf.URL = args[i]
-		case arg == "--user" && i+1 < len(args):
-			i++
-			gf.User = args[i]
-		case arg == "--pass-stdin":
-			gf.PassStdin = true
-		case arg == "--session-file" && i+1 < len(args):
-			i++
-			gf.SessionFile = args[i]
-		case arg == "--pretty":
-			gf.Pretty = true
-		default:
-			remaining = append(remaining, arg)
-		}
-	}
+var rootCmd = &cobra.Command{
+	Use:           "timecard",
+	Short:         "TimeCard timesheet management CLI",
+	SilenceUsage:  true,
+	SilenceErrors: true,
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd: true,
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ExitError("usage: timecard <command> [flags]. Use --help for details.", 1)
+		return nil
+	},
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// Load password from env var first.
+		gf.Pass = envOrDefault("TIMECARD_PASSWORD", "")
 
-	// Read password from stdin if requested
-	if gf.PassStdin {
-		scanner := bufio.NewScanner(os.Stdin)
-		if scanner.Scan() {
-			gf.Pass = strings.TrimSpace(scanner.Text())
+		// Override with stdin if requested.
+		if gf.PassStdin {
+			scanner := bufio.NewScanner(os.Stdin)
+			if scanner.Scan() {
+				gf.Pass = strings.TrimSpace(scanner.Text())
+			}
+			if err := scanner.Err(); err != nil {
+				ExitError(fmt.Sprintf("reading password from stdin: %v", err), 1)
+			}
 		}
-		if err := scanner.Err(); err != nil {
-			ExitError(fmt.Sprintf("reading password from stdin: %v", err), 1)
-		}
-	}
+	},
+}
 
-	return gf, remaining
+// Execute runs the root command.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		ExitError(err.Error(), 1)
+	}
+}
+
+func init() {
+	rootCmd.SetOut(os.Stderr)
+	rootCmd.PersistentFlags().StringVar(&gf.URL, "url", envOrDefault("TIMECARD_BASE_URL", ""), "TimeCard base URL")
+	rootCmd.PersistentFlags().StringVar(&gf.User, "user", envOrDefault("TIMECARD_USERNAME", ""), "Username")
+	rootCmd.PersistentFlags().BoolVar(&gf.PassStdin, "pass-stdin", false, "Read password from stdin")
+	rootCmd.PersistentFlags().StringVar(&gf.SessionFile, "session-file", ".timecard-session.json", "Session file path")
+	rootCmd.PersistentFlags().BoolVar(&gf.Pretty, "pretty", false, "Pretty-print JSON output")
 }
 
 func envOrDefault(key, fallback string) string {

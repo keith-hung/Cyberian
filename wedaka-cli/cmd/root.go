@@ -1,4 +1,4 @@
-// Package cmd implements CLI subcommand routing and global flag handling.
+// Package cmd implements CLI commands using cobra.
 package cmd
 
 import (
@@ -9,6 +9,7 @@ import (
 
 	"github.com/keith-hung/wedaka-cli/internal/client"
 	"github.com/keith-hung/wedaka-cli/internal/types"
+	"github.com/spf13/cobra"
 )
 
 // GlobalFlags holds the parsed global flags.
@@ -20,39 +21,36 @@ type GlobalFlags struct {
 	Pretty   bool
 }
 
-// ParseGlobalFlags extracts global flags from args. Returns parsed flags and remaining args.
-func ParseGlobalFlags(args []string) (*GlobalFlags, []string) {
-	gf := &GlobalFlags{
-		URL:      envOrDefault("WEDAKA_API_URL", ""),
-		Username: envOrDefault("WEDAKA_USERNAME", ""),
-		EmpNo:    envOrDefault("WEDAKA_EMP_NO", ""),
-		DeviceID: envOrDefault("WEDAKA_DEVICE_ID", ""),
-	}
+var gf GlobalFlags
 
-	var remaining []string
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		switch {
-		case arg == "--url" && i+1 < len(args):
-			i++
-			gf.URL = args[i]
-		case arg == "--username" && i+1 < len(args):
-			i++
-			gf.Username = args[i]
-		case arg == "--emp-no" && i+1 < len(args):
-			i++
-			gf.EmpNo = args[i]
-		case arg == "--device-id" && i+1 < len(args):
-			i++
-			gf.DeviceID = args[i]
-		case arg == "--pretty":
-			gf.Pretty = true
-		default:
-			remaining = append(remaining, arg)
-		}
-	}
+var rootCmd = &cobra.Command{
+	Use:           "wedaka",
+	Short:         "WeDaka attendance management CLI",
+	SilenceUsage:  true,
+	SilenceErrors: true,
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd: true,
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ExitError("usage: wedaka <command> [flags]. Use --help for details.", 1)
+		return nil
+	},
+}
 
-	return gf, remaining
+// Execute runs the root command.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		ExitError(err.Error(), 1)
+	}
+}
+
+func init() {
+	rootCmd.SetOut(os.Stderr)
+	rootCmd.PersistentFlags().StringVar(&gf.URL, "url", envOrDefault("WEDAKA_API_URL", ""), "WeDaka API URL")
+	rootCmd.PersistentFlags().StringVar(&gf.Username, "username", envOrDefault("WEDAKA_USERNAME", ""), "Username")
+	rootCmd.PersistentFlags().StringVar(&gf.EmpNo, "emp-no", envOrDefault("WEDAKA_EMP_NO", ""), "Employee number")
+	rootCmd.PersistentFlags().StringVar(&gf.DeviceID, "device-id", envOrDefault("WEDAKA_DEVICE_ID", ""), "Device ID")
+	rootCmd.PersistentFlags().BoolVar(&gf.Pretty, "pretty", false, "Pretty-print JSON output")
 }
 
 // NewClient creates a client.Client from global flags.

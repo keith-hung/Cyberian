@@ -1,4 +1,4 @@
-// Package cmd implements CLI subcommand routing and global flag handling.
+// Package cmd implements CLI commands using cobra.
 package cmd
 
 import (
@@ -10,6 +10,7 @@ import (
 
 	"github.com/keith-hung/azuredevops-cli/internal/client"
 	"github.com/keith-hung/azuredevops-cli/internal/types"
+	"github.com/spf13/cobra"
 )
 
 // GlobalFlags holds the parsed global flags.
@@ -27,64 +28,56 @@ type GlobalFlags struct {
 	Insecure   bool
 }
 
-// ParseGlobalFlags extracts global flags from args. Returns parsed flags and remaining args.
-func ParseGlobalFlags(args []string) (*GlobalFlags, []string) {
-	gf := &GlobalFlags{
-		BaseURL:    envOrDefault("AZDO_BASE_URL", ""),
-		Collection: envOrDefault("AZDO_COLLECTION", ""),
-		Domain:     envOrDefault("AZDO_DOMAIN", ""),
-		Username:   envOrDefault("AZDO_USERNAME", ""),
-		Password:   envOrDefault("AZDO_PASSWORD", ""),
-		Project:    envOrDefault("AZDO_PROJECT", ""),
-		Repo:       envOrDefault("AZDO_REPO", ""),
-		APIVersion: envOrDefault("AZDO_API_VERSION", "5.0-preview.1"),
-		Insecure:   envOrBool("AZDO_INSECURE", false),
-	}
+var gf GlobalFlags
 
-	var remaining []string
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		switch {
-		case arg == "--base-url" && i+1 < len(args):
-			i++
-			gf.BaseURL = args[i]
-		case arg == "--collection" && i+1 < len(args):
-			i++
-			gf.Collection = args[i]
-		case arg == "--domain" && i+1 < len(args):
-			i++
-			gf.Domain = args[i]
-		case arg == "--username" && i+1 < len(args):
-			i++
-			gf.Username = args[i]
-		case arg == "--project" && i+1 < len(args):
-			i++
-			gf.Project = args[i]
-		case arg == "--repo" && i+1 < len(args):
-			i++
-			gf.Repo = args[i]
-		case arg == "--api-version" && i+1 < len(args):
-			i++
-			gf.APIVersion = args[i]
-		case arg == "--pass-stdin":
-			gf.PassStdin = true
-		case arg == "--insecure":
-			gf.Insecure = true
-		case arg == "--pretty":
-			gf.Pretty = true
-		default:
-			remaining = append(remaining, arg)
+var rootCmd = &cobra.Command{
+	Use:           "azuredevops",
+	Short:         "Azure DevOps Server management CLI",
+	SilenceUsage:  true,
+	SilenceErrors: true,
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd: true,
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ExitError("usage: azuredevops <command> [flags]. Use --help for details.", 1)
+		return nil
+	},
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// Load password from env var first.
+		gf.Password = envOrDefault("AZDO_PASSWORD", "")
+
+		// Override with stdin if requested.
+		if gf.PassStdin {
+			scanner := bufio.NewScanner(os.Stdin)
+			if scanner.Scan() {
+				gf.Password = strings.TrimSpace(scanner.Text())
+			}
+			if err := scanner.Err(); err != nil {
+				ExitError(fmt.Sprintf("reading password from stdin: %v", err), 1)
+			}
 		}
-	}
+	},
+}
 
-	if gf.PassStdin {
-		scanner := bufio.NewScanner(os.Stdin)
-		if scanner.Scan() {
-			gf.Password = strings.TrimSpace(scanner.Text())
-		}
+// Execute runs the root command.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		ExitError(err.Error(), 1)
 	}
+}
 
-	return gf, remaining
+func init() {
+	rootCmd.SetOut(os.Stderr)
+	rootCmd.PersistentFlags().StringVar(&gf.BaseURL, "base-url", envOrDefault("AZDO_BASE_URL", ""), "Azure DevOps Server base URL")
+	rootCmd.PersistentFlags().StringVar(&gf.Collection, "collection", envOrDefault("AZDO_COLLECTION", ""), "Collection name")
+	rootCmd.PersistentFlags().StringVar(&gf.Domain, "domain", envOrDefault("AZDO_DOMAIN", ""), "AD domain name")
+	rootCmd.PersistentFlags().StringVar(&gf.Username, "username", envOrDefault("AZDO_USERNAME", ""), "Username")
+	rootCmd.PersistentFlags().StringVar(&gf.Project, "project", envOrDefault("AZDO_PROJECT", ""), "Default project name")
+	rootCmd.PersistentFlags().StringVar(&gf.Repo, "repo", envOrDefault("AZDO_REPO", ""), "Default repository name")
+	rootCmd.PersistentFlags().StringVar(&gf.APIVersion, "api-version", envOrDefault("AZDO_API_VERSION", "5.0-preview.1"), "API version")
+	rootCmd.PersistentFlags().BoolVar(&gf.PassStdin, "pass-stdin", false, "Read password from stdin")
+	rootCmd.PersistentFlags().BoolVar(&gf.Insecure, "insecure", envOrBool("AZDO_INSECURE", false), "Skip TLS certificate verification")
+	rootCmd.PersistentFlags().BoolVar(&gf.Pretty, "pretty", false, "Pretty-print JSON output")
 }
 
 // NewClient creates a client.Client from global flags.

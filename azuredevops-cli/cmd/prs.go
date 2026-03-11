@@ -4,57 +4,50 @@ import (
 	"strings"
 
 	"github.com/keith-hung/azuredevops-cli/internal/types"
+	"github.com/spf13/cobra"
 )
 
-// RunPRs lists pull requests in a repository.
-func RunPRs(gf *GlobalFlags, args []string) {
-	project := gf.Project
-	repo := gf.Repo
-	status := "active"
+var prsCmd = &cobra.Command{
+	Use:   "prs",
+	Short: "List pull requests in a repository",
+	Run: func(cmd *cobra.Command, args []string) {
+		status, _ := cmd.Flags().GetString("status")
 
-	for i := 0; i < len(args); i++ {
-		switch {
-		case args[i] == "--project" && i+1 < len(args):
-			i++
-			project = args[i]
-		case args[i] == "--repo" && i+1 < len(args):
-			i++
-			repo = args[i]
-		case args[i] == "--status" && i+1 < len(args):
-			i++
-			status = args[i]
+		if gf.Project == "" {
+			ExitError("--project or AZDO_PROJECT is required", 3)
 		}
-	}
+		if gf.Repo == "" {
+			ExitError("--repo or AZDO_REPO is required", 3)
+		}
 
-	if project == "" {
-		ExitError("--project or AZDO_PROJECT is required", 3)
-	}
-	if repo == "" {
-		ExitError("--repo or AZDO_REPO is required", 3)
-	}
+		c := NewClient(&gf)
 
-	c := NewClient(gf)
+		repoID, err := c.ResolveRepoID(gf.Project, gf.Repo)
+		if err != nil {
+			ExitErrorInfer(err.Error())
+		}
 
-	repoID, err := c.ResolveRepoID(project, repo)
-	if err != nil {
-		ExitErrorInfer(err.Error())
-	}
+		result, err := c.ListPullRequests(gf.Project, repoID, status)
+		if err != nil {
+			ExitErrorInfer(err.Error())
+		}
 
-	result, err := c.ListPullRequests(project, repoID, status)
-	if err != nil {
-		ExitErrorInfer(err.Error())
-	}
+		prs := make([]types.PROutput, len(result.Value))
+		for i, pr := range result.Value {
+			prs[i] = apiPRToOutput(pr)
+		}
 
-	prs := make([]types.PROutput, len(result.Value))
-	for i, pr := range result.Value {
-		prs[i] = apiPRToOutput(pr)
-	}
+		OutputJSON(types.PRsOutput{
+			Success:      true,
+			PullRequests: prs,
+			Count:        len(prs),
+		}, gf.Pretty)
+	},
+}
 
-	OutputJSON(types.PRsOutput{
-		Success:      true,
-		PullRequests: prs,
-		Count:        len(prs),
-	}, gf.Pretty)
+func init() {
+	prsCmd.Flags().String("status", "active", "Filter by status (active|completed|abandoned|all)")
+	rootCmd.AddCommand(prsCmd)
 }
 
 // apiPRToOutput converts an API PR to a CLI output PR.

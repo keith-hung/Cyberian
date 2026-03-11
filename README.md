@@ -257,7 +257,7 @@ REST API client，操作 Azure DevOps Server（on-premises, IIS Basic Auth）。
 <details>
 <summary><strong>從原始碼建置</strong></summary>
 
-所有 CLI 皆為零依賴的 Go module（Go 1.25，僅使用 stdlib）。
+所有 CLI 皆為 Go module（Go 1.25），使用 [cobra](https://github.com/spf13/cobra) 處理 CLI 命令與 flag 解析。
 
 ```bash
 # 單一平台建置（開發用）
