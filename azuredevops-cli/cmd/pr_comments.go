@@ -74,14 +74,14 @@ func RunPRComments(gf *GlobalFlags, args []string) {
 		ExitErrorInfer(err.Error())
 	}
 
-	var threads []types.ThreadOutput
+	threads := make([]types.ThreadOutput, 0, len(result.Value))
 	for _, t := range result.Value {
 		// Skip system-generated threads (commentType 2 = system)
 		if len(t.Comments) > 0 && t.Comments[0].CommentType == 2 {
 			continue
 		}
 
-		var comments []types.CommentOutput
+		comments := make([]types.CommentOutput, 0, len(t.Comments))
 		for _, c := range t.Comments {
 			comments = append(comments, types.CommentOutput{
 				ID:            c.ID,
