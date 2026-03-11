@@ -313,6 +313,25 @@ func (c *Client) CreateThread(project, repoID string, prID int, comment string) 
 	return checkResponse(status, body)
 }
 
+// ListThreads returns all comment threads for a pull request.
+func (c *Client) ListThreads(project, repoID string, prID int) (*types.ThreadListResponse, error) {
+	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullrequests/%d/threads",
+		url.PathEscape(project), url.PathEscape(repoID), prID)
+	body, status, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkResponse(status, body); err != nil {
+		return nil, err
+	}
+
+	var result types.ThreadListResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("decode response: %w", err)
+	}
+	return &result, nil
+}
+
 // ListReviewers returns the reviewers of a pull request.
 func (c *Client) ListReviewers(project, repoID string, prID int) (*types.ReviewerListResponse, error) {
 	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullrequests/%d/reviewers",
