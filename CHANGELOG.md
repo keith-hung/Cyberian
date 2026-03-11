@@ -2,6 +2,16 @@
 
 此檔案記錄本專案各版本的重要變更。
 
+## [0.2.4] - 2026-03-11
+
+### 新增
+
+- azuredevops-cli 新增 `pr-comments` 命令 — 列出 PR 的所有留言 thread，包含作者、內容、日期與 thread 狀態，自動過濾系統產生的 thread 與已刪除的留言
+
+### 修正
+
+- `CommentType` 欄位型別從 `int` 改為 `string`，與 Azure DevOps REST API 回傳格式一致（影響 `pr-comment` 建立留言的 request body）
+
 ## [0.2.3] - 2026-03-11
 
 ### 新增
