@@ -1,6 +1,6 @@
 ---
 name: azuredevops
-description: "Manage Azure DevOps projects, repositories, and pull requests. Trigger when user asks about: pull request, PR, code review, merge, Azure DevOps, TFS, DevOps repo, DevOps project, my PRs, assigned PRs, pending reviews."
+description: "Manage Azure DevOps projects, repositories, and pull requests. Trigger when user asks about: pull request, PR, code review, merge, Azure DevOps, TFS, DevOps repo, DevOps project, my PRs, assigned PRs, pending reviews, PR image attachments, embed images in PR."
 user-invokable: true
 argument-hint: "[action, e.g. 'list PRs', 'create PR', 'approve PR 123']"
 ---
@@ -18,6 +18,7 @@ Activate when user asks to:
 - Add comments or reviewers to a PR
 - Merge a PR (via status update to "completed")
 - Find PRs assigned to you or created by you (cross-project)
+- Upload images and embed them in PR descriptions or comments
 
 ## Prerequisites
 
@@ -156,6 +157,50 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh version
 1. **Create**: `pr-create --project X --repo Y --source feature/abc --target main --title "Add feature"`
 2. **Add reviewers**: `pr-add-reviewer --project X --repo Y --id 456 --reviewer DOMAIN\reviewer`
 3. **Merge**: `pr-update --project X --repo Y --id 456 --status completed`
+
+## Upload image attachment to PR
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh pr-attachment --project <ProjectName> --repo <RepoName> --id <PR_ID> --file <path> [--name <filename>]
+```
+
+Uploads a file to the PR attachment store and returns the absolute URL. If `--name` is omitted, the file's basename is used.
+
+Response:
+```json
+{"success":true,"pull_request_id":123,"filename":"screenshot.png","url":"https://...full-url.../attachments/screenshot.png"}
+```
+
+### Embed image in PR comment or description
+
+Use the `url` from the upload response in standard Markdown, then pass it to `pr-comment` or `pr-update --description`:
+
+```markdown
+![Screenshot](https://{tfs-host}/tfs/{collection}/{projectGuid}/_apis/git/repositories/{repoGuid}/pullRequests/{prId}/attachments/screenshot.png)
+```
+
+### Upload multiple images and create comment
+
+```bash
+URLS=""
+for f in step1.png step2.png step3.png; do
+  RESULT=$(${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh pr-attachment \
+    --project X --repo Y --id 123 --file "./$f")
+  URL=$(echo "$RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin)['url'])")
+  URLS="${URLS}![${f}](${URL})\n"
+done
+
+${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh pr-comment \
+  --project X --repo Y --id 123 \
+  --comment "$(echo -e "## Results\n${URLS}")"
+```
+
+### Key notes
+
+| Item | Detail |
+|------|--------|
+| Image reference | Must use the **absolute URL** returned by `pr-attachment`; relative filenames will not render |
+| URL GUIDs | The API response auto-converts project/repo names to GUIDs — use the URL as-is |
 
 ## Error Handling
 
