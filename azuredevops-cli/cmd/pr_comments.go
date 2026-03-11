@@ -76,7 +76,7 @@ func RunPRComments(gf *GlobalFlags, args []string) {
 
 	threads := make([]types.ThreadOutput, 0, len(result.Value))
 	for _, t := range result.Value {
-		// Skip system-generated threads (commentType 2 = system)
+		// Skip system-generated threads (commentType == "system")
 		if len(t.Comments) > 0 && t.Comments[0].CommentType == "system" {
 			continue
 		}
