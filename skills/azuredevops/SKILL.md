@@ -15,7 +15,7 @@ Activate when user asks to:
 - View Azure DevOps projects or repositories
 - List, view, create, or update pull requests (PR)
 - Approve or reject a PR (code review)
-- Add comments or reviewers to a PR
+- List, add comments or reviewers to a PR
 - Merge a PR (via status update to "completed")
 - Find PRs assigned to you or created by you (cross-project)
 - Upload images and embed them in PR descriptions or comments
@@ -111,6 +111,12 @@ Casts a "Rejected" vote (-10) as the authenticated user.
 ```bash
 ${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh pr-comment --project <ProjectName> --repo <RepoName> --id <PR_ID> --comment "Comment text"
 ```
+
+### List PR comments
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh pr-comments --project <ProjectName> --repo <RepoName> --id <PR_ID>
+```
+Returns all comment threads (excluding system-generated threads) with author, content, date, and thread status (active, resolved, closed, etc.).
 
 ### List PR reviewers
 ```bash

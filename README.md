@@ -240,6 +240,7 @@ REST API client，操作 Azure DevOps Server（on-premises, IIS Basic Auth）。
 | `pr-approve`      | 核准 PR            |
 | `pr-reject`       | 拒絕 PR            |
 | `pr-comment`      | 新增留言           |
+| `pr-comments`     | 列出留言           |
 | `pr-attachment`   | 上傳圖片附件至 PR  |
 | `pr-reviewers`    | 列出審閱者         |
 | `pr-add-reviewer` | 新增審閱者         |

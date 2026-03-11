@@ -81,6 +81,12 @@ type APIConnectionData struct {
 	AuthenticatedUser APIIdentity `json:"authenticatedUser"`
 }
 
+// ThreadListResponse is the API response for listing comment threads.
+type ThreadListResponse struct {
+	Count int         `json:"count"`
+	Value []APIThread `json:"value"`
+}
+
 // APIThread represents a PR comment thread.
 type APIThread struct {
 	ID       int          `json:"id"`
@@ -90,10 +96,13 @@ type APIThread struct {
 
 // APIComment represents a single comment in a thread.
 type APIComment struct {
-	ID              int    `json:"id"`
-	Content         string `json:"content"`
-	CommentType     int    `json:"commentType"`
-	ParentCommentID int    `json:"parentCommentId"`
+	ID              int         `json:"id"`
+	Content         string      `json:"content"`
+	CommentType     string      `json:"commentType"`
+	ParentCommentID int         `json:"parentCommentId"`
+	Author          APIIdentity `json:"author"`
+	PublishedDate   string      `json:"publishedDate"`
+	IsDeleted       bool        `json:"isDeleted"`
 }
 
 // ReviewerListResponse is the API response for listing reviewers.
@@ -153,7 +162,7 @@ type ThreadBody struct {
 type ThreadComment struct {
 	ParentCommentID int    `json:"parentCommentId"`
 	Content         string `json:"content"`
-	CommentType     int    `json:"commentType"`
+	CommentType     string `json:"commentType"`
 }
 
 // --- CLI output types ---
@@ -254,6 +263,29 @@ type PRVoteOutput struct {
 	PullRequestID int    `json:"pull_request_id"`
 	Vote          string `json:"vote"`
 	Message       string `json:"message"`
+}
+
+// PRCommentsOutput is the output for the pr-comments command.
+type PRCommentsOutput struct {
+	Success       bool           `json:"success"`
+	PullRequestID int            `json:"pull_request_id"`
+	Threads       []ThreadOutput `json:"threads"`
+	Count         int            `json:"count"`
+}
+
+// ThreadOutput is a single comment thread in the output.
+type ThreadOutput struct {
+	ID       int             `json:"id"`
+	Status   string          `json:"status"`
+	Comments []CommentOutput `json:"comments"`
+}
+
+// CommentOutput is a single comment in the output.
+type CommentOutput struct {
+	ID            int    `json:"id"`
+	Author        string `json:"author"`
+	Content       string `json:"content"`
+	PublishedDate string `json:"published_date"`
 }
 
 // PRCommentOutput is the output for the pr-comment command.
