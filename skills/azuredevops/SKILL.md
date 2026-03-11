@@ -116,7 +116,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh pr-comment --project <Proj
 ```bash
 ${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh pr-comments --project <ProjectName> --repo <RepoName> --id <PR_ID>
 ```
-Returns all comment threads (excluding system-generated threads) with author, content, date, and thread status (active, fixed, closed, etc.).
+Returns all comment threads (excluding system-generated threads) with author, content, date, and thread status (active, resolved, closed, etc.).
 
 ### List PR reviewers
 ```bash

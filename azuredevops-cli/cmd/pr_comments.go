@@ -14,7 +14,7 @@ func threadStatusLabel(status int) string {
 	case 1:
 		return "active"
 	case 2:
-		return "fixed"
+		return "resolved"
 	case 3:
 		return "won't fix"
 	case 4:
@@ -77,7 +77,7 @@ func RunPRComments(gf *GlobalFlags, args []string) {
 	threads := make([]types.ThreadOutput, 0, len(result.Value))
 	for _, t := range result.Value {
 		// Skip system-generated threads (commentType == "system")
-		if len(t.Comments) > 0 && t.Comments[0].CommentType == "system" {
+		if len(t.Comments) == 0 || t.Comments[0].CommentType == "system" {
 			continue
 		}
 
