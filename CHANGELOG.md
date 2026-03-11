@@ -2,6 +2,13 @@
 
 此檔案記錄本專案各版本的重要變更。
 
+## [0.2.3] - 2026-03-11
+
+### 新增
+
+- azuredevops-cli 新增 `pr-attachment` 命令 — 上傳圖片至 PR 附件並回傳可嵌入 Markdown 的絕對 URL
+- jira skill 新增 custom field 操作 — 透過 REST API 支援 list、get、set、inspect schema，涵蓋 user/text/select 欄位類型
+
 ## [0.2.2] - 2026-03-06
 
 ### 變更

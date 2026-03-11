@@ -103,3 +103,24 @@ All 22 env vars across 5 skills can be centrally configured in `.claude/settings
 - Entry indices are 0-9 (max 10 entries per week)
 - Daily hours must not exceed 8 per day
 - Only draft save is supported — never submit for approval
+
+## Version Bump Checklist
+
+When bumping the version (e.g., `v0.2.2` → `v0.2.3`), update the following files **in order**:
+
+1. `.claude-plugin/plugin.json` — `"version": "X.Y.Z"`
+2. `.claude-plugin/marketplace.json` — `"version": "X.Y.Z"`
+3. `scripts/timecard-launcher.sh` — `VERSION="vX.Y.Z"`
+4. `scripts/timecard-launcher.ps1` — `$Version = "vX.Y.Z"`
+5. `scripts/wedaka-launcher.sh` — `VERSION="vX.Y.Z"`
+6. `scripts/wedaka-launcher.ps1` — `$Version = "vX.Y.Z"`
+7. `scripts/azuredevops-launcher.sh` — `VERSION="vX.Y.Z"`
+8. `scripts/azuredevops-launcher.ps1` — `$Version = "vX.Y.Z"`
+9. `README.md` — build/tag examples in the "從原始碼建置" section
+10. `CHANGELOG.md` — add new version entry at the top
+
+After committing, tag and push to trigger the release workflow:
+```bash
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
