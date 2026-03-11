@@ -1,5 +1,7 @@
 package cmd
 
+import "github.com/spf13/cobra"
+
 // Set via ldflags at build time.
 var (
 	Version   = "dev"
@@ -13,11 +15,18 @@ type versionOutput struct {
 	BuildDate string `json:"build_date"`
 }
 
-// RunVersion prints version information.
-func RunVersion(gf *GlobalFlags) {
-	OutputJSON(versionOutput{
-		Version:   Version,
-		Commit:    Commit,
-		BuildDate: BuildDate,
-	}, gf.Pretty)
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		OutputJSON(versionOutput{
+			Version:   Version,
+			Commit:    Commit,
+			BuildDate: BuildDate,
+		}, gf.Pretty)
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(versionCmd)
 }

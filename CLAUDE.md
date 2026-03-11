@@ -25,7 +25,7 @@ Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plu
 
 ## Build & Run
 
-All CLIs are zero-dependency Go modules (Go 1.25, stdlib only — no third-party imports).
+All CLIs are Go modules (Go 1.25) using [cobra](https://github.com/spf13/cobra) for command-line parsing. Each CLI has built-in `--help` for all commands.
 
 ```bash
 # Build timecard-cli
@@ -81,8 +81,7 @@ Config via env vars: `AZDO_BASE_URL`, `AZDO_COLLECTION`, `AZDO_DOMAIN` (optional
 ### Shared CLI patterns
 
 All CLIs follow the same conventions:
-- **Manual flag parsing** — no flag library; `ParseGlobalFlags()` in `cmd/root.go` handles `--flag value` pairs with env var fallbacks
-- **Subcommand extraction** — `extractSubcommand()` in `main.go` pulls the command from args (flags can appear before or after)
+- **Cobra-based CLI** — `cobra` handles subcommand routing, flag parsing, and auto-generated `--help`; global flags are `PersistentFlags` on the root command with env var defaults
 - **JSON-only output** — stdout for success, stderr for errors (`{"success":false,"error":"..."}`)
 - **Exit codes** — 0=success, 1=general, 2=auth/config, 3=validation, 4=network
 

@@ -1,33 +1,49 @@
 package cmd
 
 import (
-	"flag"
 	"fmt"
 	"regexp"
 	"time"
 
 	"github.com/keith-hung/wedaka-cli/internal/types"
+	"github.com/spf13/cobra"
 )
 
-// RunClockIn handles the clock-in subcommand.
-func RunClockIn(gf *GlobalFlags, args []string) {
-	runClock(gf, args, "in")
+var clockInCmd = &cobra.Command{
+	Use:   "clock-in",
+	Short: "Clock in for work",
+	Run: func(cmd *cobra.Command, args []string) {
+		date, _ := cmd.Flags().GetString("date")
+		clockTime, _ := cmd.Flags().GetString("time")
+		note, _ := cmd.Flags().GetString("note")
+		runClock(&gf, "in", date, clockTime, note)
+	},
 }
 
-// RunClockOut handles the clock-out subcommand.
-func RunClockOut(gf *GlobalFlags, args []string) {
-	runClock(gf, args, "out")
+var clockOutCmd = &cobra.Command{
+	Use:   "clock-out",
+	Short: "Clock out from work",
+	Run: func(cmd *cobra.Command, args []string) {
+		date, _ := cmd.Flags().GetString("date")
+		clockTime, _ := cmd.Flags().GetString("time")
+		note, _ := cmd.Flags().GetString("note")
+		runClock(&gf, "out", date, clockTime, note)
+	},
 }
 
-func runClock(gf *GlobalFlags, args []string, direction string) {
-	fs := flag.NewFlagSet("clock-"+direction, flag.ContinueOnError)
-	dateFlag := fs.String("date", "", "Date in YYYY-MM-DD format (default: today)")
-	timeFlag := fs.String("time", "", "Time in HH:MM:SS format (default: now)")
-	noteFlag := fs.String("note", "", "Additional notes")
-	if err := fs.Parse(args); err != nil {
-		ExitError(fmt.Sprintf("invalid flags: %v", err), 3)
-	}
+func init() {
+	clockInCmd.Flags().String("date", "", "Date in YYYY-MM-DD format (default: today)")
+	clockInCmd.Flags().String("time", "", "Time in HH:MM:SS format (default: now)")
+	clockInCmd.Flags().String("note", "", "Additional notes")
+	rootCmd.AddCommand(clockInCmd)
 
+	clockOutCmd.Flags().String("date", "", "Date in YYYY-MM-DD format (default: today)")
+	clockOutCmd.Flags().String("time", "", "Time in HH:MM:SS format (default: now)")
+	clockOutCmd.Flags().String("note", "", "Additional notes")
+	rootCmd.AddCommand(clockOutCmd)
+}
+
+func runClock(gf *GlobalFlags, direction, dateFlag, timeFlag, noteFlag string) {
 	if gf.EmpNo == "" {
 		ExitError("--emp-no or WEDAKA_EMP_NO is required", 2)
 	}
@@ -41,11 +57,11 @@ func runClock(gf *GlobalFlags, args []string, direction string) {
 
 	// Resolve date
 	targetDate := now.Format("2006-01-02")
-	if *dateFlag != "" {
-		if !dateRegex.MatchString(*dateFlag) {
-			ExitError(fmt.Sprintf("invalid date format: %s (expected YYYY-MM-DD)", *dateFlag), 3)
+	if dateFlag != "" {
+		if !dateRegex.MatchString(dateFlag) {
+			ExitError(fmt.Sprintf("invalid date format: %s (expected YYYY-MM-DD)", dateFlag), 3)
 		}
-		targetDate = *dateFlag
+		targetDate = dateFlag
 	}
 
 	// Reject future dates
@@ -70,11 +86,11 @@ func runClock(gf *GlobalFlags, args []string, direction string) {
 
 	// Resolve time
 	targetTime := now.Format("15:04:05")
-	if *timeFlag != "" {
-		if !timeRegex.MatchString(*timeFlag) {
-			ExitError(fmt.Sprintf("invalid time format: %s (expected HH:MM:SS)", *timeFlag), 3)
+	if timeFlag != "" {
+		if !timeRegex.MatchString(timeFlag) {
+			ExitError(fmt.Sprintf("invalid time format: %s (expected HH:MM:SS)", timeFlag), 3)
 		}
-		targetTime = *timeFlag
+		targetTime = timeFlag
 	}
 
 	// Build datetime in YYYY/MM/DD HH:MM:SS format (API requirement)
@@ -95,7 +111,7 @@ func runClock(gf *GlobalFlags, args []string, direction string) {
 			{
 				DateType:   "1",
 				LeaveHours: 0,
-				Memo:       *noteFlag,
+				Memo:       noteFlag,
 				WorkItem:   workItem,
 				WorkTime:   workTime,
 				WorkType:   workType,

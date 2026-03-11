@@ -1,55 +1,59 @@
 package cmd
 
 import (
-	"flag"
 	"fmt"
 	"regexp"
 
 	"github.com/keith-hung/wedaka-cli/internal/types"
+	"github.com/spf13/cobra"
 )
 
-// RunCheckWorkday handles the check-workday subcommand.
-func RunCheckWorkday(gf *GlobalFlags, args []string) {
-	fs := flag.NewFlagSet("check-workday", flag.ContinueOnError)
-	dateFlag := fs.String("date", "", "Date in YYYY-MM-DD format (required)")
-	if err := fs.Parse(args); err != nil {
-		ExitError(fmt.Sprintf("invalid flags: %v", err), 3)
-	}
+var checkWorkdayCmd = &cobra.Command{
+	Use:   "check-workday",
+	Short: "Check if a date is a work day",
+	Run: func(cmd *cobra.Command, args []string) {
+		date, _ := cmd.Flags().GetString("date")
 
-	if *dateFlag == "" {
-		ExitError("--date is required", 3)
-	}
+		if date == "" {
+			ExitError("--date is required", 3)
+		}
 
-	dateRegex := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
-	if !dateRegex.MatchString(*dateFlag) {
-		ExitError(fmt.Sprintf("invalid date format: %s (expected YYYY-MM-DD)", *dateFlag), 3)
-	}
+		dateRegex := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+		if !dateRegex.MatchString(date) {
+			ExitError(fmt.Sprintf("invalid date format: %s (expected YYYY-MM-DD)", date), 3)
+		}
 
-	if gf.EmpNo == "" {
-		ExitError("--emp-no or WEDAKA_EMP_NO is required", 2)
-	}
+		if gf.EmpNo == "" {
+			ExitError("--emp-no or WEDAKA_EMP_NO is required", 2)
+		}
 
-	c := NewClient(gf)
-	resp, err := c.GetDateType(gf.EmpNo, *dateFlag)
-	if err != nil {
-		ExitErrorInfer(fmt.Sprintf("check work day: %v", err))
-	}
+		c := NewClient(&gf)
+		resp, err := c.GetDateType(gf.EmpNo, date)
+		if err != nil {
+			ExitErrorInfer("check work day: " + err.Error())
+		}
 
-	if !resp.Status {
+		if !resp.Status {
+			OutputJSON(types.CheckWorkdayOutput{
+				Success: false,
+				Date:    date,
+				Message: resp.ErrorMessage,
+			}, gf.Pretty)
+			return
+		}
+
+		isWorkDay := resp.DateType == "1"
 		OutputJSON(types.CheckWorkdayOutput{
-			Success: false,
-			Date:    *dateFlag,
-			Message: resp.ErrorMessage,
+			Success:     true,
+			Date:        date,
+			DateType:    resp.DateType,
+			IsWorkDay:   isWorkDay,
+			Description: dateTypeDescription(resp.DateType),
 		}, gf.Pretty)
-		return
-	}
+	},
+}
 
-	isWorkDay := resp.DateType == "1"
-	OutputJSON(types.CheckWorkdayOutput{
-		Success:     true,
-		Date:        *dateFlag,
-		DateType:    resp.DateType,
-		IsWorkDay:   isWorkDay,
-		Description: dateTypeDescription(resp.DateType),
-	}, gf.Pretty)
+func init() {
+	checkWorkdayCmd.Flags().String("date", "", "Date in YYYY-MM-DD format (required)")
+	rootCmd.AddCommand(checkWorkdayCmd)
 }

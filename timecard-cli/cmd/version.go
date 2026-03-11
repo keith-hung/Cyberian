@@ -1,6 +1,9 @@
 package cmd
 
-import "github.com/keith-hung/timecard-cli/internal/types"
+import (
+	"github.com/keith-hung/timecard-cli/internal/types"
+	"github.com/spf13/cobra"
+)
 
 // Version info injected at build time via ldflags.
 var (
@@ -9,11 +12,18 @@ var (
 	BuildDate = "unknown"
 )
 
-// RunVersion prints version info as JSON.
-func RunVersion(gf *GlobalFlags) {
-	OutputJSON(types.VersionOutput{
-		Version:   Version,
-		Commit:    Commit,
-		BuildDate: BuildDate,
-	}, gf.Pretty)
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		OutputJSON(types.VersionOutput{
+			Version:   Version,
+			Commit:    Commit,
+			BuildDate: BuildDate,
+		}, gf.Pretty)
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(versionCmd)
 }
