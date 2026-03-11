@@ -279,6 +279,21 @@ type AddReviewerOutput struct {
 	Message       string `json:"message"`
 }
 
+// APIAttachment represents an uploaded PR attachment.
+type APIAttachment struct {
+	ID          int    `json:"id"`
+	DisplayName string `json:"displayName"`
+	URL         string `json:"url"`
+}
+
+// PRAttachmentOutput is the output for the pr-attachment command.
+type PRAttachmentOutput struct {
+	Success       bool   `json:"success"`
+	PullRequestID int    `json:"pull_request_id"`
+	Filename      string `json:"filename"`
+	URL           string `json:"url"`
+}
+
 // VersionOutput is the output for the version command.
 type VersionOutput struct {
 	Version   string `json:"version"`

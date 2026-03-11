@@ -49,6 +49,11 @@ func New(baseURL, collection, username, password, apiVersion string, insecure bo
 
 // doRequest executes an HTTP request and returns the response body.
 func (c *Client) doRequest(method, path string, body io.Reader) ([]byte, int, error) {
+	return c.doRequestWithContentType(method, path, "application/json", body)
+}
+
+// doRequestWithContentType executes an HTTP request with a custom Content-Type.
+func (c *Client) doRequestWithContentType(method, path, contentType string, body io.Reader) ([]byte, int, error) {
 	u, err := url.Parse(fmt.Sprintf("%s/%s/%s", c.baseURL, c.collection, path))
 	if err != nil {
 		return nil, 0, fmt.Errorf("parse URL: %w", err)
@@ -65,7 +70,7 @@ func (c *Client) doRequest(method, path string, body io.Reader) ([]byte, int, er
 
 	req.SetBasicAuth(c.username, c.password)
 	if method == "POST" || method == "PATCH" || method == "PUT" {
-		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Type", contentType)
 	}
 	req.Header.Set("Accept", "application/json")
 
@@ -378,6 +383,25 @@ func (c *Client) ListMyPullRequests(status, searchParam, userID string) (*types.
 	}
 
 	var result types.PRListResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("decode response: %w", err)
+	}
+	return &result, nil
+}
+
+// UploadAttachment uploads a file as a PR attachment and returns the attachment metadata.
+func (c *Client) UploadAttachment(project, repoID string, prID int, filename string, data io.Reader) (*types.APIAttachment, error) {
+	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullRequests/%d/attachments/%s",
+		url.PathEscape(project), url.PathEscape(repoID), prID, url.PathEscape(filename))
+	body, status, err := c.doRequestWithContentType("POST", path, "application/octet-stream", data)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkResponse(status, body); err != nil {
+		return nil, err
+	}
+
+	var result types.APIAttachment
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
