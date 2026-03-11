@@ -87,6 +87,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh version
 
 ## Important Rules
 
+- **Always use the launcher**: NEVER run the `timecard` binary directly. Always invoke via `${CLAUDE_PLUGIN_ROOT}/scripts/timecard-launcher.sh <command> [flags]` (or `.ps1` on Windows)
 - `entry_index` is 0-9 (max 10 entries per week)
 - All dates in `--hours`/`--notes` must be in the same week as `--date`
 - Daily hours per day MUST NOT exceed 8

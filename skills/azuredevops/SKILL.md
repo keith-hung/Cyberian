@@ -144,6 +144,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh version
 - **Merge via update**: To merge a PR, use `pr-update --status completed`
 - **Abandon via update**: To close without merging, use `pr-update --status abandoned`
 - **Cross-project search**: `my-prs` searches across all projects — no `--project` or `--repo` required
+- **Always use the launcher**: NEVER run the `azuredevops` binary directly. Always invoke via `${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh <command> [flags]` (or `.ps1` on Windows)
 - **Authentication**: Uses IIS Basic Auth — ensure the server has Basic Auth enabled in IIS
 
 ## Workflow

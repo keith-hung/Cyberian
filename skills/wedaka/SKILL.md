@@ -71,6 +71,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/wedaka-launcher.sh version
 
 ## Important Rules
 
+- **Always use the launcher**: NEVER run the `wedaka` binary directly. Always invoke via `${CLAUDE_PLUGIN_ROOT}/scripts/wedaka-launcher.sh <command> [flags]` (or `.ps1` on Windows)
 - Cannot clock for future dates — only today or past dates
 - Cannot clock on non-work days (holidays, leave days) — the CLI checks automatically
 - Date format must be YYYY-MM-DD, time format must be HH:MM:SS
