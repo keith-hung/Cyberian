@@ -33,6 +33,10 @@ var rootCmd = &cobra.Command{
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
 	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ExitError("usage: timecard <command> [flags]. Use --help for details.", 1)
+		return nil
+	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Load password from env var first.
 		gf.Pass = envOrDefault("TIMECARD_PASSWORD", "")
@@ -58,6 +62,7 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.SetOut(os.Stderr)
 	rootCmd.PersistentFlags().StringVar(&gf.URL, "url", envOrDefault("TIMECARD_BASE_URL", ""), "TimeCard base URL")
 	rootCmd.PersistentFlags().StringVar(&gf.User, "user", envOrDefault("TIMECARD_USERNAME", ""), "Username")
 	rootCmd.PersistentFlags().BoolVar(&gf.PassStdin, "pass-stdin", false, "Read password from stdin")

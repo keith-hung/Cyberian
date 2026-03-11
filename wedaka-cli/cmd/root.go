@@ -31,6 +31,10 @@ var rootCmd = &cobra.Command{
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
 	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ExitError("usage: wedaka <command> [flags]. Use --help for details.", 1)
+		return nil
+	},
 }
 
 // Execute runs the root command.
@@ -41,6 +45,7 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.SetOut(os.Stderr)
 	rootCmd.PersistentFlags().StringVar(&gf.URL, "url", envOrDefault("WEDAKA_API_URL", ""), "WeDaka API URL")
 	rootCmd.PersistentFlags().StringVar(&gf.Username, "username", envOrDefault("WEDAKA_USERNAME", ""), "Username")
 	rootCmd.PersistentFlags().StringVar(&gf.EmpNo, "emp-no", envOrDefault("WEDAKA_EMP_NO", ""), "Employee number")

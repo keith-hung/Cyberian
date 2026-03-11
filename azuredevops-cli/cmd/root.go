@@ -38,6 +38,10 @@ var rootCmd = &cobra.Command{
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
 	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ExitError("usage: azuredevops <command> [flags]. Use --help for details.", 1)
+		return nil
+	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Load password from env var first.
 		gf.Password = envOrDefault("AZDO_PASSWORD", "")
@@ -47,6 +51,9 @@ var rootCmd = &cobra.Command{
 			scanner := bufio.NewScanner(os.Stdin)
 			if scanner.Scan() {
 				gf.Password = strings.TrimSpace(scanner.Text())
+			}
+			if err := scanner.Err(); err != nil {
+				ExitError(fmt.Sprintf("reading password from stdin: %v", err), 1)
 			}
 		}
 	},
@@ -60,6 +67,7 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.SetOut(os.Stderr)
 	rootCmd.PersistentFlags().StringVar(&gf.BaseURL, "base-url", envOrDefault("AZDO_BASE_URL", ""), "Azure DevOps Server base URL")
 	rootCmd.PersistentFlags().StringVar(&gf.Collection, "collection", envOrDefault("AZDO_COLLECTION", ""), "Collection name")
 	rootCmd.PersistentFlags().StringVar(&gf.Domain, "domain", envOrDefault("AZDO_DOMAIN", ""), "AD domain name")
