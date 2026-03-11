@@ -82,12 +82,12 @@ func RunPRComments(gf *GlobalFlags, args []string) {
 		}
 
 		comments := make([]types.CommentOutput, 0, len(t.Comments))
-		for _, c := range t.Comments {
+		for _, co := range t.Comments {
 			comments = append(comments, types.CommentOutput{
-				ID:            c.ID,
-				Author:        c.Author.DisplayName,
-				Content:       c.Content,
-				PublishedDate: c.PublishedDate,
+				ID:            co.ID,
+				Author:        co.Author.DisplayName,
+				Content:       co.Content,
+				PublishedDate: co.PublishedDate,
 			})
 		}
 
