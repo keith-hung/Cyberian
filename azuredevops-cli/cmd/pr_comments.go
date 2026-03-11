@@ -94,6 +94,10 @@ func RunPRComments(gf *GlobalFlags, args []string) {
 			})
 		}
 
+		if len(comments) == 0 {
+			continue
+		}
+
 		threads = append(threads, types.ThreadOutput{
 			ID:       t.ID,
 			Status:   threadStatusLabel(t.Status),
