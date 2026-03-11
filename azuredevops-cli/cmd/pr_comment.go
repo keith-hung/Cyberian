@@ -76,13 +76,15 @@ func RunPRComment(gf *GlobalFlags, args []string) {
 			Message:       fmt.Sprintf("Reply added to thread %d on PR %d", threadID, prID),
 		}, gf.Pretty)
 	} else {
-		if err := c.CreateThread(project, repoID, prID, comment); err != nil {
+		newThreadID, err := c.CreateThread(project, repoID, prID, comment)
+		if err != nil {
 			ExitErrorInfer(err.Error())
 		}
 		OutputJSON(types.PRCommentOutput{
 			Success:       true,
 			PullRequestID: prID,
-			Message:       fmt.Sprintf("Comment added to PR %d", prID),
+			ThreadID:      newThreadID,
+			Message:       fmt.Sprintf("Comment added to PR %d (thread %d)", prID, newThreadID),
 		}, gf.Pretty)
 	}
 }

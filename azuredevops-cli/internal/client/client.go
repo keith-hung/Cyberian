@@ -287,8 +287,8 @@ func (c *Client) VotePullRequest(project, repoID string, prID int, reviewerID st
 	return checkResponse(status, body)
 }
 
-// CreateThread adds a comment thread to a pull request.
-func (c *Client) CreateThread(project, repoID string, prID int, comment string) error {
+// CreateThread adds a comment thread to a pull request and returns the new thread ID.
+func (c *Client) CreateThread(project, repoID string, prID int, comment string) (int, error) {
 	thread := types.ThreadBody{
 		Comments: []types.ThreadComment{
 			{
@@ -301,16 +301,23 @@ func (c *Client) CreateThread(project, repoID string, prID int, comment string) 
 	}
 	data, err := json.Marshal(thread)
 	if err != nil {
-		return fmt.Errorf("encode body: %w", err)
+		return 0, fmt.Errorf("encode body: %w", err)
 	}
 
 	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullrequests/%d/threads",
 		url.PathEscape(project), url.PathEscape(repoID), prID)
 	body, status, err := c.doRequest("POST", path, bytes.NewReader(data))
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return checkResponse(status, body)
+	if err := checkResponse(status, body); err != nil {
+		return 0, err
+	}
+	var result types.APIThread
+	if err := json.Unmarshal(body, &result); err != nil {
+		return 0, fmt.Errorf("decode response: %w", err)
+	}
+	return result.ID, nil
 }
 
 // ReplyToThread adds a comment to an existing thread.
