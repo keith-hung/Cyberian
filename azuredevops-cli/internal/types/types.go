@@ -292,7 +292,7 @@ type CommentOutput struct {
 type PRCommentOutput struct {
 	Success       bool   `json:"success"`
 	PullRequestID int    `json:"pull_request_id"`
-	ThreadID      int    `json:"thread_id,omitempty"`
+	ThreadID      int    `json:"thread_id"`
 	Message       string `json:"message"`
 }
 
