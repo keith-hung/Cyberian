@@ -391,7 +391,7 @@ func (c *Client) ListMyPullRequests(status, searchParam, userID string) (*types.
 
 // UploadAttachment uploads a file as a PR attachment and returns the attachment metadata.
 func (c *Client) UploadAttachment(project, repoID string, prID int, filename string, data io.Reader) (*types.APIAttachment, error) {
-	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullRequests/%d/attachments/%s",
+	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullrequests/%d/attachments/%s",
 		url.PathEscape(project), url.PathEscape(repoID), prID, url.PathEscape(filename))
 	body, status, err := c.doRequestWithContentType("POST", path, "application/octet-stream", data)
 	if err != nil {

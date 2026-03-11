@@ -55,7 +55,7 @@ func RunPRAttachment(gf *GlobalFlags, args []string) {
 
 	f, err := os.Open(filePath)
 	if err != nil {
-		ExitError("cannot open file: "+err.Error(), 3)
+		ExitErrorInfer("cannot open file: " + err.Error())
 	}
 	defer f.Close()
 
