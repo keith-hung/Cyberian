@@ -313,6 +313,27 @@ func (c *Client) CreateThread(project, repoID string, prID int, comment string) 
 	return checkResponse(status, body)
 }
 
+// ReplyToThread adds a comment to an existing thread.
+func (c *Client) ReplyToThread(project, repoID string, prID, threadID int, comment string) error {
+	reply := types.ThreadComment{
+		ParentCommentID: 1,
+		Content:         comment,
+		CommentType:     "text",
+	}
+	data, err := json.Marshal(reply)
+	if err != nil {
+		return fmt.Errorf("encode body: %w", err)
+	}
+
+	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullrequests/%d/threads/%d/comments",
+		url.PathEscape(project), url.PathEscape(repoID), prID, threadID)
+	body, status, err := c.doRequest("POST", path, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	return checkResponse(status, body)
+}
+
 // ListThreads returns all comment threads for a pull request.
 func (c *Client) ListThreads(project, repoID string, prID int) (*types.ThreadListResponse, error) {
 	path := fmt.Sprintf("%s/_apis/git/repositories/%s/pullrequests/%d/threads",

@@ -111,6 +111,11 @@ Casts a "Rejected" vote (-10) as the authenticated user.
 ```bash
 ${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh pr-comment --project <ProjectName> --repo <RepoName> --id <PR_ID> --comment "Comment text"
 ```
+Creates a new comment thread. To reply to an existing thread, add `--thread-id`:
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/azuredevops-launcher.sh pr-comment --project <ProjectName> --repo <RepoName> --id <PR_ID> --thread-id <THREAD_ID> --comment "Reply text"
+```
+The `THREAD_ID` can be obtained from `pr-comments` output.
 
 ### List PR comments
 ```bash
