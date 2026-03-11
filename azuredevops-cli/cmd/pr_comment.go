@@ -72,6 +72,7 @@ func RunPRComment(gf *GlobalFlags, args []string) {
 		OutputJSON(types.PRCommentOutput{
 			Success:       true,
 			PullRequestID: prID,
+			ThreadID:      threadID,
 			Message:       fmt.Sprintf("Reply added to thread %d on PR %d", threadID, prID),
 		}, gf.Pretty)
 	} else {
