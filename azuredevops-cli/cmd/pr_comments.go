@@ -83,6 +83,9 @@ func RunPRComments(gf *GlobalFlags, args []string) {
 
 		comments := make([]types.CommentOutput, 0, len(t.Comments))
 		for _, co := range t.Comments {
+			if co.IsDeleted {
+				continue
+			}
 			comments = append(comments, types.CommentOutput{
 				ID:            co.ID,
 				Author:        co.Author.DisplayName,

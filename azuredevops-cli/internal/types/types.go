@@ -102,6 +102,7 @@ type APIComment struct {
 	ParentCommentID int         `json:"parentCommentId"`
 	Author          APIIdentity `json:"author"`
 	PublishedDate   string      `json:"publishedDate"`
+	IsDeleted       bool        `json:"isDeleted"`
 }
 
 // ReviewerListResponse is the API response for listing reviewers.
