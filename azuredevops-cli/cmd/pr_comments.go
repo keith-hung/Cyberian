@@ -5,8 +5,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// threadStatusLabel converts a thread status integer to a human-readable label.
-func threadStatusLabel(status int) string {
+// threadStatusLabel converts a thread status to a human-readable label.
+func threadStatusLabel(status types.ThreadStatus) string {
 	switch status {
 	case 0:
 		return "unknown"
