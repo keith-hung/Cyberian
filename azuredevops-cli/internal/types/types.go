@@ -1,6 +1,12 @@
 // Package types defines request/response structures for the Azure DevOps REST API.
 package types
 
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
+
 // --- Azure DevOps API response types ---
 
 // ProjectListResponse is the API response for listing projects.
@@ -87,11 +93,51 @@ type ThreadListResponse struct {
 	Value []APIThread `json:"value"`
 }
 
+// ThreadStatus handles API responses where thread status may be either
+// an integer (Azure DevOps Services) or a string (TFS on-prem).
+type ThreadStatus int
+
+// UnmarshalJSON decodes thread status from both integer and string representations.
+func (s *ThreadStatus) UnmarshalJSON(data []byte) error {
+	// Try integer first
+	var n int
+	if err := json.Unmarshal(data, &n); err == nil {
+		*s = ThreadStatus(n)
+		return nil
+	}
+
+	// Fall back to string
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return fmt.Errorf("thread status must be int or string, got %s", string(data))
+	}
+
+	switch strings.ToLower(str) {
+	case "unknown":
+		*s = 0
+	case "active":
+		*s = 1
+	case "resolved":
+		*s = 2
+	case "wontfix", "won't fix":
+		*s = 3
+	case "closed":
+		*s = 4
+	case "bydesign", "by design":
+		*s = 5
+	case "pending":
+		*s = 6
+	default:
+		*s = 0
+	}
+	return nil
+}
+
 // APIThread represents a PR comment thread.
 type APIThread struct {
 	ID       int          `json:"id"`
 	Comments []APIComment `json:"comments"`
-	Status   int          `json:"status"`
+	Status   ThreadStatus `json:"status"`
 }
 
 // APIComment represents a single comment in a thread.
