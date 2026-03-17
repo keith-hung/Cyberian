@@ -266,7 +266,7 @@ cd wedaka-cli && go build -o wedaka .
 cd azuredevops-cli && go build -o azuredevops .
 
 # 跨平台建置（產出至 dist/）
-./scripts/build.sh v0.2.4
+./scripts/build.sh v0.2.5
 ```
 
 ### Release 流程
@@ -274,8 +274,8 @@ cd azuredevops-cli && go build -o azuredevops .
 Push version tag 後 GitHub Actions 會自動 cross-compile 並建立 Release：
 
 ```bash
-git tag v0.2.4
-git push origin v0.2.4
+git tag v0.2.5
+git push origin v0.2.5
 ```
 
 支援 6 個平台：linux/darwin/windows × amd64/arm64。

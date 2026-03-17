@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-03-17
+
 ### 新增
 
 - azuredevops-cli `pr-comment` 新增 `--thread-id` 旗標 — 可回覆既有的留言 thread
@@ -14,6 +16,8 @@
 
 ### 修正
 
+- `APIThread.Status` 新增 `ThreadStatus` 自訂型別，同時支援 int（Azure DevOps Services）與 string（TFS on-prem）格式的 unmarshal — 修正 `pr-comments` 在 TFS on-prem 上因 `cannot unmarshal string into Go struct field` 而失敗的問題
+- `AZDO_API_VERSION` 範本與文件預設值從 `5.0` 修正為 `5.0-preview.1`，避免 attachment endpoint 因缺少 preview flag 而失敗
 - `CreateThread` 改為回傳新建 thread 的 ID — `pr-comment` 建立新 thread 時，輸出 JSON 現在包含正確的 `thread_id`
 - `PRCommentOutput.ThreadID` 移除 `omitempty`，與其他 output struct 的 `int` 欄位一致
 
