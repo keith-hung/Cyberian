@@ -140,3 +140,12 @@ After committing, tag and push to trigger the release workflow:
 git tag vX.Y.Z
 git push origin vX.Y.Z
 ```
+
+## Adding a New CLI
+
+`.github/workflows/release.yml` builds each CLI with a separate hardcoded `Build <name>-cli` step (it is NOT auto-discovery). When adding a new CLI, you MUST add a matching build step, or the release will silently ship without that CLI's binaries and its launcher will fail to download them. Mirror the existing steps:
+
+- ldflags inject `${MODULE}/cmd.Version`, `.Commit`, `.BuildDate` (module read from the CLI's `go.mod`)
+- output name `<name>-cli_${GOOS}_${GOARCH}` (append `.exe` for windows) — must match the launcher's download URL
+
+Also add the new CLI's launcher (`.sh` + `.ps1`) to the Version Bump Checklist above.
