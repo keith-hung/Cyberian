@@ -5,7 +5,7 @@ REPO="keith-hung/Cyberian"
 VERSION="v0.2.6"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CACHE_DIR="$SCRIPT_DIR/.cache"
-BIN="$CACHE_DIR/wedaka-cli"
+BIN="$CACHE_DIR/nouveau-timecard-cli"
 
 # Fast path: binary already cached
 if [[ -x "$BIN" ]]; then
@@ -33,10 +33,10 @@ case "${OS}_${ARCH}" in
 esac
 
 # Download binary
-URL="https://github.com/${REPO}/releases/download/${VERSION}/wedaka-cli_${OS}_${ARCH}"
+URL="https://github.com/${REPO}/releases/download/${VERSION}/nouveau-timecard-cli_${OS}_${ARCH}"
 mkdir -p "$CACHE_DIR"
 
-echo "Downloading wedaka-cli ${VERSION} for ${OS}/${ARCH}..." >&2
+echo "Downloading nouveau-timecard-cli ${VERSION} for ${OS}/${ARCH}..." >&2
 if command -v curl &>/dev/null; then
     curl -fsSL "$URL" -o "$BIN"
 elif command -v wget &>/dev/null; then

@@ -1,14 +1,17 @@
 # CLI build output
 timecard-cli/timecard
+nouveau-timecard-cli/nouveau-timecard
 wedaka-cli/wedaka
 azuredevops-cli/azuredevops
 dist/
 
 # Session files
 .timecard-session.json
+.nouveau-timecard-session.json
 
 # Plugin cache
 .claude-plugin/scripts/.cache/
+scripts/.cache/
 
 # User-specific settings (contains credentials)
 .claude/settings.local.json

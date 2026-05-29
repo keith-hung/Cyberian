@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-05-29
+
+### 新增
+
+- 新增 `nouveau-timecard-cli` 與 `nouveau-timecard` skill — 改版後智慧工時系統（Razor Pages）的工時填報 CLI，支援 `projects`、`activities`、`timesheet`、`save`（草稿）、`sync-leave`、`version`，沿用既有 `TIMECARD_*` 環境變數。僅儲存草稿，刻意不提供送出審核功能。
+
 ## [0.2.5] - 2026-03-17
 
 ### 新增

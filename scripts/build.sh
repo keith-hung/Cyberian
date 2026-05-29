@@ -23,6 +23,7 @@ PLATFORMS=(
 
 CLIS=(
     "timecard-cli"
+    "nouveau-timecard-cli"
     "wedaka-cli"
     "azuredevops-cli"
 )
