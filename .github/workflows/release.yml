@@ -20,26 +20,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: timecard-cli/go.mod
-
-      - name: Build timecard-cli
-        env:
-          CGO_ENABLED: "0"
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
-          COMMIT="$(git rev-parse --short HEAD)"
-          BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          MODULE="$(grep '^module' timecard-cli/go.mod | awk '{print $2}')"
-          LDFLAGS="-s -w -X ${MODULE}/cmd.Version=${VERSION} -X ${MODULE}/cmd.Commit=${COMMIT} -X ${MODULE}/cmd.BuildDate=${BUILD_DATE}"
-
-          mkdir -p dist
-          if [ "${GOOS}" = "windows" ]; then
-            cd timecard-cli && go build -ldflags="${LDFLAGS}" -o "../dist/timecard-cli_windows_${GOARCH}.exe" .
-          else
-            cd timecard-cli && go build -ldflags="${LDFLAGS}" -o "../dist/timecard-cli_${GOOS}_${GOARCH}" .
-          fi
+          go-version-file: nouveau-timecard-cli/go.mod
 
       - name: Build wedaka-cli
         env:

@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-06-02
+
+### 變更
+
+- 將 legacy `timecard` skill 自 plugin 退役 — 它持續與新版工時系統誤觸發。移除 `skills/timecard/` 與 `scripts/timecard-launcher.{sh,ps1}`，並自 `release.yml`／`build.sh` 移除其建置步驟。`timecard-cli/` 原始碼保留供參考，但不再隨 release 發布，Claude Code 也不會再觸發它。工時填報請一律使用 `nouveau-timecard`。`TIMECARD_*` 環境變數維持不變（`nouveau-timecard` 沿用）。
+
 ## [0.2.6] - 2026-05-29
 
 ### 新增

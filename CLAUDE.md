@@ -4,12 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plugin that exposes them as skills. It contains four Go CLI applications and a Claude Code plugin with six skills.
+Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plugin that exposes them as skills. It contains four Go CLI applications and a Claude Code plugin with five skills.
+
+> **Retired:** The legacy `timecard` skill was removed from the plugin (it kept mis-triggering against the rebuilt system). Its `timecard-cli/` Go source, launchers history, and build instructions are retained for reference, but it is NOT exposed as a skill, NOT built by `release.yml`/`build.sh`, and has no launcher script. For timesheet work, always use `nouveau-timecard`. Do not re-add a `skills/timecard/` directory.
 
 ## Repository Structure
 
 ```
-├── timecard-cli/     Go CLI — timesheet management (legacy TimeCard web scraping)
+├── timecard-cli/     Go CLI — legacy TimeCard web scraping (RETIRED from plugin; source kept, not built/shipped)
 ├── nouveau-timecard-cli/ Go CLI — timesheet for the rebuilt Smart Timecard (draft only)
 ├── wedaka-cli/       Go CLI — clock-in/out attendance (REST API)
 ├── azuredevops-cli/  Go CLI — Azure DevOps Server projects, repos & PRs (REST API)
@@ -19,7 +21,7 @@ Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plu
 ├── .claude-plugin/   Claude Code plugin metadata
 │   ├── plugin.json       Plugin manifest
 │   └── marketplace.json  Marketplace manifest
-├── skills/           Skill definitions (SKILL.md per skill: timecard, nouveau-timecard, wedaka, jira, outlook-calendar, azuredevops)
+├── skills/           Skill definitions (SKILL.md per skill: nouveau-timecard, wedaka, jira, outlook-calendar, azuredevops)
 ├── scripts/          Launcher scripts (.sh + .ps1) + build script
 └── dev/              Development notes (gitignored)
 ```
@@ -29,8 +31,8 @@ Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plu
 All CLIs are Go modules (Go 1.25) using [cobra](https://github.com/spf13/cobra) for command-line parsing. Each CLI has built-in `--help` for all commands.
 
 ```bash
-# Build timecard-cli
-cd timecard-cli && go build -o timecard .
+# Build nouveau-timecard-cli
+cd nouveau-timecard-cli && go build -o nouveau-timecard .
 
 # Build wedaka-cli
 cd wedaka-cli && go build -o wedaka .
@@ -39,18 +41,20 @@ cd wedaka-cli && go build -o wedaka .
 cd azuredevops-cli && go build -o azuredevops .
 
 # Run commands directly
-./timecard-cli/timecard <command> [flags]
+./nouveau-timecard-cli/nouveau-timecard <command> [flags]
 ./wedaka-cli/wedaka <command> [flags]
 ./azuredevops-cli/azuredevops <command> [flags]
+
+# Retired (source kept, not shipped): cd timecard-cli && go build -o timecard .
 ```
 
-Build outputs (`timecard-cli/timecard`, `wedaka-cli/wedaka`, `azuredevops-cli/azuredevops`) are gitignored.
+Build outputs (`nouveau-timecard-cli/nouveau-timecard`, `wedaka-cli/wedaka`, `azuredevops-cli/azuredevops`) are gitignored.
 
 There are no tests, linting, or CI pipelines configured.
 
 ## Architecture
 
-### timecard-cli
+### timecard-cli (RETIRED — source kept for reference, not exposed as a skill or shipped)
 
 Scrapes a legacy Java web app (TimeCard) by parsing HTML responses. Key flow:
 
@@ -122,16 +126,16 @@ When bumping the version (e.g., `v0.2.2` → `v0.2.3`), update the following fil
 
 1. `.claude-plugin/plugin.json` — `"version": "X.Y.Z"`
 2. `.claude-plugin/marketplace.json` — `"version": "X.Y.Z"`
-3. `scripts/timecard-launcher.sh` — `VERSION="vX.Y.Z"`
-4. `scripts/timecard-launcher.ps1` — `$Version = "vX.Y.Z"`
-5. `scripts/nouveau-timecard-launcher.sh` — `VERSION="vX.Y.Z"`
-6. `scripts/nouveau-timecard-launcher.ps1` — `$Version = "vX.Y.Z"`
-7. `scripts/wedaka-launcher.sh` — `VERSION="vX.Y.Z"`
-8. `scripts/wedaka-launcher.ps1` — `$Version = "vX.Y.Z"`
-9. `scripts/azuredevops-launcher.sh` — `VERSION="vX.Y.Z"`
-10. `scripts/azuredevops-launcher.ps1` — `$Version = "vX.Y.Z"`
-11. `README.md` — build/tag examples in the "從原始碼建置" section
-12. `CHANGELOG.md` — add new version entry at the top
+3. `scripts/nouveau-timecard-launcher.sh` — `VERSION="vX.Y.Z"`
+4. `scripts/nouveau-timecard-launcher.ps1` — `$Version = "vX.Y.Z"`
+5. `scripts/wedaka-launcher.sh` — `VERSION="vX.Y.Z"`
+6. `scripts/wedaka-launcher.ps1` — `$Version = "vX.Y.Z"`
+7. `scripts/azuredevops-launcher.sh` — `VERSION="vX.Y.Z"`
+8. `scripts/azuredevops-launcher.ps1` — `$Version = "vX.Y.Z"`
+9. `README.md` — build/tag examples in the "從原始碼建置" section
+10. `CHANGELOG.md` — add new version entry at the top
+
+> Note: the legacy `scripts/timecard-launcher.{sh,ps1}` were removed when the timecard skill was retired — no version bump applies.
 
 > Note: `scripts/jira-launcher.{sh,ps1}` track jira-cli's own upstream version, not the plugin version — do not bump them here.
 
