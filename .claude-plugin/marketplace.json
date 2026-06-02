@@ -12,6 +12,14 @@
       "source": "./",
       "description": "Workplace productivity tools — timesheet, JIRA, calendars, and more",
       "version": "0.2.7"
+    },
+    {
+      "name": "read-email",
+      "source": {
+        "source": "github",
+        "repo": "keith-hung/claude-read-email"
+      },
+      "description": "Parse and read .eml and .msg email files with token-optimized content extraction and attachment handling"
     }
   ]
 }
