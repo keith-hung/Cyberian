@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plugin that exposes them as skills. It contains four Go CLI applications and a Claude Code plugin with five skills.
+Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plugin that exposes them as skills. It contains five Go CLI applications and a Claude Code plugin with six skills.
 
 > **Retired:** The legacy `timecard` skill was removed from the plugin (it kept mis-triggering against the rebuilt system). Its `timecard-cli/` Go source, launchers history, and build instructions are retained for reference, but it is NOT exposed as a skill, NOT built by `release.yml`/`build.sh`, and has no launcher script. For timesheet work, always use `nouveau-timecard`. Do not re-add a `skills/timecard/` directory.
 
@@ -15,13 +15,14 @@ Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plu
 ├── nouveau-timecard-cli/ Go CLI — timesheet for the rebuilt Smart Timecard (draft only)
 ├── wedaka-cli/       Go CLI — clock-in/out attendance (REST API)
 ├── azuredevops-cli/  Go CLI — Azure DevOps Server projects, repos & PRs (REST API)
+├── chpw-cli/         Go CLI — change on-prem AD password via the self-service portal (two-step, SMS OTP)
 ├── .claude/          Claude Code project config
 │   ├── settings.local.json  User-specific env vars (gitignored, contains credentials)
 │   └── settings.json.example  Template for settings.local.json
 ├── .claude-plugin/   Claude Code plugin metadata
 │   ├── plugin.json       Plugin manifest
 │   └── marketplace.json  Marketplace manifest
-├── skills/           Skill definitions (SKILL.md per skill: nouveau-timecard, wedaka, jira, outlook-calendar, azuredevops)
+├── skills/           Skill definitions (SKILL.md per skill: nouveau-timecard, wedaka, jira, outlook-calendar, azuredevops, change-password)
 ├── scripts/          Launcher scripts (.sh + .ps1) + build script
 └── dev/              Development notes (gitignored)
 ```
@@ -40,15 +41,19 @@ cd wedaka-cli && go build -o wedaka .
 # Build azuredevops-cli
 cd azuredevops-cli && go build -o azuredevops .
 
+# Build chpw-cli
+cd chpw-cli && go build -o chpw .
+
 # Run commands directly
 ./nouveau-timecard-cli/nouveau-timecard <command> [flags]
 ./wedaka-cli/wedaka <command> [flags]
 ./azuredevops-cli/azuredevops <command> [flags]
+./chpw-cli/chpw <command> [flags]
 
 # Retired (source kept, not shipped): cd timecard-cli && go build -o timecard .
 ```
 
-Build outputs (`nouveau-timecard-cli/nouveau-timecard`, `wedaka-cli/wedaka`, `azuredevops-cli/azuredevops`) are gitignored.
+Build outputs (`nouveau-timecard-cli/nouveau-timecard`, `wedaka-cli/wedaka`, `azuredevops-cli/azuredevops`, `chpw-cli/chpw`) are gitignored.
 
 There are no tests, linting, or CI pipelines configured.
 
@@ -96,6 +101,19 @@ Commands: `projects`, `repos`, `prs`, `my-prs`, `pr`, `pr-create`, `pr-update`, 
 
 Config via env vars: `AZDO_BASE_URL`, `AZDO_COLLECTION`, `AZDO_DOMAIN` (optional), `AZDO_USERNAME`, `AZDO_PASSWORD`, `AZDO_PROJECT` (optional), `AZDO_REPO` (optional), `AZDO_API_VERSION` (optional, default: 5.0-preview.1), `AZDO_INSECURE` (optional, skip TLS verification)
 
+### chpw-cli
+
+REST API client for the off-network self-service AD password-change portal. Two-step flow with a human-supplied SMS OTP in the middle:
+
+1. `login` — verifies the current password; the server texts a 6-digit OTP to the registered phone and the session (cookies + form token) is persisted to `.chpw-session.json`
+2. `submit` — sends the new password plus the OTP within its validity window to complete the change
+
+Commands: `login`, `submit`, `version`
+
+Config via env vars: `CHPW_BASE_URL`, `CHPW_USERNAME` (optional), `CHPW_INSECURE` (optional, skip TLS verification). Password is only ever supplied via `--pass-stdin`; the session file stores cookies and a form token, never a password.
+
+The `change-password` skill also covers a second, CLI-free path: domain-joined Windows machines that can reach a DC use `skills/change-password/local-change.ps1` (PowerShell ADSI) for an instant local change with no OTP.
+
 ### Shared CLI patterns
 
 All CLIs follow the same conventions:
@@ -105,11 +123,11 @@ All CLIs follow the same conventions:
 
 ### Claude Code Plugin
 
-The plugin (`plugin.json`) registers five skills that Claude Code activates based on keyword triggers. Each skill's SKILL.md contains the full usage instructions, commands, and examples.
+The plugin (`plugin.json`) registers six skills that Claude Code activates based on keyword triggers. Each skill's SKILL.md contains the full usage instructions, commands, and examples.
 
 Launcher scripts in `scripts/` auto-download platform-appropriate binaries from GitHub Releases on first run, caching them in `.cache/`. The jira launcher also auto-initializes `jira-cli` config from env vars.
 
-All 22 env vars across 5 skills can be centrally configured in `.claude/settings.local.json` (copy from `settings.json.example`). Shell profile exports also work and take precedence over settings.json values.
+All 25 env vars across 6 skills can be centrally configured in `.claude/settings.local.json` (copy from `settings.json.example`). Shell profile exports also work and take precedence over settings.json values.
 
 ## Key Conventions
 
@@ -132,8 +150,10 @@ When bumping the version (e.g., `v0.2.2` → `v0.2.3`), update the following fil
 6. `scripts/wedaka-launcher.ps1` — `$Version = "vX.Y.Z"`
 7. `scripts/azuredevops-launcher.sh` — `VERSION="vX.Y.Z"`
 8. `scripts/azuredevops-launcher.ps1` — `$Version = "vX.Y.Z"`
-9. `README.md` — build/tag examples in the "從原始碼建置" section
-10. `CHANGELOG.md` — add new version entry at the top
+9. `scripts/chpw-launcher.sh` — `VERSION="vX.Y.Z"`
+10. `scripts/chpw-launcher.ps1` — `$Version = "vX.Y.Z"`
+11. `README.md` — build/tag examples in the "從原始碼建置" section
+12. `CHANGELOG.md` — add new version entry at the top
 
 > Note: the legacy `scripts/timecard-launcher.{sh,ps1}` were removed when the timecard skill was retired — no version bump applies.
 

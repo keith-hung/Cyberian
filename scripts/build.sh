@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Cross-compile nouveau-timecard-cli, wedaka-cli, and azuredevops-cli for all supported platforms.
+# Cross-compile nouveau-timecard-cli, wedaka-cli, azuredevops-cli, and chpw-cli for all supported platforms.
 # Note: legacy timecard-cli is retired from the release pipeline; its source is kept but no longer built here.
 # Usage:
 #   ./scripts/build.sh              # build with version "dev"
@@ -26,6 +26,7 @@ CLIS=(
     "nouveau-timecard-cli"
     "wedaka-cli"
     "azuredevops-cli"
+    "chpw-cli"
 )
 
 # Clean previous build

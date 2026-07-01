@@ -37,6 +37,7 @@ Claude 會自動挑選對應的 skill，背後透過各服務的 CLI 或 API 完
 | **jira**             | JIRA 操作             | JIRA issue、專案狀態、sprint、custom fields                           |
 | **outlook-calendar** | 行事曆查詢            | 會議、行事曆、schedule                                                |
 | **azuredevops**      | Azure DevOps 操作     | PR、pull request、code review、my PRs、Azure DevOps、PR image attachments |
+| **change-password**  | 變更 on-prem AD 密碼  | 改密碼、change password、AD 密碼、密碼過期、domain password             |
 | **read-email** \*    | 解析 .eml / .msg 郵件 | 讀郵件、parse .eml、開啟 .msg、取出附件、信件內容                      |
 
 > \* **read-email** 是本 marketplace 內的**獨立 plugin**（原始碼於 [keith-hung/claude-read-email](https://github.com/keith-hung/claude-read-email)），需另外安裝且有不同的執行需求 — 詳見下方「安裝與設定」中的「額外安裝：read-email」。
@@ -130,6 +131,7 @@ cp .claude/settings.json.example .claude/settings.local.json
 | **JIRA**                      | `JIRA_SERVER_URL`、`JIRA_USER_EMAIL`、`JIRA_API_TOKEN`、`JIRA_PROJECT`、`JIRA_BOARD`                                                               |
 | **Outlook 行事曆**            | `OUTLOOK_ICS_URLS`                                                                                                                                 |
 | **Azure DevOps**              | `AZDO_BASE_URL`、`AZDO_COLLECTION`、`AZDO_DOMAIN`、`AZDO_USERNAME`、`AZDO_PASSWORD`、`AZDO_PROJECT`*、`AZDO_REPO`*、`AZDO_API_VERSION`*、`AZDO_INSECURE`* |
+| **Change Password** 密碼變更  | `CHPW_BASE_URL`、`CHPW_USERNAME`、選用 `CHPW_INSECURE`（僅離線自助服務入口路徑需要；本機 AD 變更免設定）                                          |
 
 （標 `*` 為選用）
 
@@ -153,7 +155,7 @@ export TIMECARD_PASSWORD="your_password"
 <details>
 <summary><strong>額外安裝：read-email（獨立 plugin）</strong></summary>
 
-`read-email` 與上方五個內建 skill 不同，是 marketplace 內的**獨立 plugin**，需另外安裝：
+`read-email` 與上方六個內建 skill 不同，是 marketplace 內的**獨立 plugin**，需另外安裝：
 
 ```bash
 claude plugin install read-email@cyberian-marketplace
@@ -184,6 +186,7 @@ claude plugin install read-email@cyberian-marketplace
 | nouveau-timecard | Go CLI（HTTP + HTML 解析）                                     | 首次觸發自 GitHub Releases 自動下載，快取於 `scripts/.cache/` |
 | wedaka           | Go CLI（REST API）                                             | 首次觸發自 GitHub Releases 自動下載       |
 | azuredevops      | Go CLI（REST API）                                             | 首次觸發自 GitHub Releases 自動下載       |
+| change-password  | Path A: PowerShell（ADSI，本機無 OTP）；Path B: Go CLI（chpw-cli，two-step login/submit with SMS OTP） | Path A 隨 skill 附帶，無需下載；Path B 首次觸發自 GitHub Releases 自動下載 |
 | jira             | 第三方 [jira-cli](https://github.com/ankitpokhrel/jira-cli)   | launcher 自動下載並依 `JIRA_*` 初始化設定 |
 | outlook-calendar | 直接讀取 ICS 訂閱（`OUTLOOK_ICS_URLS`）                        | 無 binary，由 skill 邏輯處理              |
 | read-email       | 獨立 plugin，Python 解析器                                     | 透過 uv 執行，需 Python 3.10+             |
@@ -198,6 +201,7 @@ claude plugin install read-email@cyberian-marketplace
 ├── nouveau-timecard-cli/ Go CLI — 工時系統工時填報（草稿）
 ├── wedaka-cli/           Go CLI — 打卡出勤
 ├── azuredevops-cli/      Go CLI — Azure DevOps PR 管理
+├── chpw-cli/             Go CLI — 密碼變更（自助服務入口，two-step login/submit with SMS OTP）
 ├── .claude-plugin/       Claude Code plugin metadata
 │   ├── plugin.json           Plugin manifest
 │   └── marketplace.json      Marketplace manifest（含外部 read-email plugin）
@@ -280,6 +284,16 @@ REST API client，操作 Azure DevOps Server（on-premises, IIS Basic Auth）。
 | `pr-add-reviewer` | 新增審閱者          |
 | `version`         | 版本資訊            |
 
+### chpw-cli — 變更 on-prem AD 密碼
+
+Go CLI，透過離線自助服務入口以兩步驟變更 on-prem AD 密碼：`login` 驗證目前密碼並觸發伺服器發送 SMS OTP，`submit` 在效期內送出新密碼與 OTP。session 檔案只保存 cookie 與表單 token，不含密碼。domain-joined 且可連線 DC 的情境改走 PowerShell（ADSI）本機變更，詳見 `change-password` skill。
+
+| 指令      | 說明                                 |
+|-----------|--------------------------------------|
+| `login`   | 驗證目前密碼，觸發伺服器發送 SMS OTP |
+| `submit`  | 送出新密碼與 OTP（需在效期內完成）   |
+| `version` | 版本資訊                             |
+
 ### 共通設計
 
 - 所有輸出皆為 JSON 格式（stdout 為成功結果，stderr 為錯誤訊息）
@@ -298,17 +312,18 @@ REST API client，操作 Azure DevOps Server（on-premises, IIS Basic Auth）。
 cd nouveau-timecard-cli && go build -o nouveau-timecard .
 cd wedaka-cli && go build -o wedaka .
 cd azuredevops-cli && go build -o azuredevops .
+cd chpw-cli && go build -o chpw .
 # 已退役的 timecard-cli 仍可手動建置：cd timecard-cli && go build -o timecard .
 
 # 跨平台建置（產出至 dist/）
-./scripts/build.sh v0.2.7
+./scripts/build.sh v0.3.0
 ```
 
 **Release 流程** — Push version tag 後 GitHub Actions 會自動 cross-compile 並建立 Release（6 個平台：linux/darwin/windows × amd64/arm64）：
 
 ```bash
-git tag v0.2.7
-git push origin v0.2.7
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 </details>

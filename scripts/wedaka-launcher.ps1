@@ -2,7 +2,7 @@
 $ErrorActionPreference = "Stop"
 
 $Repo = "keith-hung/Cyberian"
-$Version = "v0.2.7"
+$Version = "v0.3.0"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $CacheDir = Join-Path $ScriptDir ".cache"
 $Bin = Join-Path $CacheDir "wedaka-cli.exe"
