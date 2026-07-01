@@ -33,10 +33,10 @@ var loginCmd = &cobra.Command{
 // newFlow validates required inputs and builds a flow client.
 func newFlow() (*flow.Client, error) {
 	if gf.URL == "" {
-		return nil, fmt.Errorf("--url or CHPW_BASE_URL is required")
+		return nil, fmt.Errorf("config: --url or CHPW_BASE_URL is required")
 	}
 	if gf.User == "" {
-		return nil, fmt.Errorf("--user or CHPW_USERNAME is required")
+		return nil, fmt.Errorf("config: --user or CHPW_USERNAME is required")
 	}
 	if !gf.PassStdin || gf.Pass == "" {
 		return nil, fmt.Errorf("password required via --pass-stdin")

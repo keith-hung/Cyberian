@@ -53,8 +53,8 @@ func New(cfg Config) (*Client, error) {
 	return &Client{http: hc, cfg: cfg}, nil
 }
 
-// resultBody returns the body of a POST, following a single redirect if present
-// so the caller always inspects the rendered result page.
+// resultBody returns the body of a POST, following the POST's redirect (and any
+// further hops via Get) so the caller always inspects the rendered result page.
 func (c *Client) resultBody(post *httpclient.Response) (string, error) {
 	if post.Status >= 300 && post.Status < 400 {
 		loc := post.Headers.Get("Location")

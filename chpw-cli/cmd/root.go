@@ -115,7 +115,7 @@ func ExitError(msg string, code int) {
 func classifyError(err error) int {
 	lower := strings.ToLower(err.Error())
 	switch {
-	case containsAny(lower, "authentication", "invalid username", "bad password", "user not found", "antiforgery"):
+	case containsAny(lower, "authentication", "invalid username", "bad password", "user not found", "antiforgery", "config"):
 		return 2
 	case containsAny(lower, "validation", "otp", "expired", "policy", "must be", "required"):
 		return 3
