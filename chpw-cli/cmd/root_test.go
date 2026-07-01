@@ -6,8 +6,8 @@ func TestClassifyError(t *testing.T) {
 	cases := map[string]int{
 		"authentication failed: bad password": 2,
 		"validation: 驗證碼錯誤":                   3,
-		"POST : dial tcp: no such host":        4,
-		"something unexpected":                 1,
+		"POST : dial tcp: no such host":       4,
+		"something unexpected":                1,
 	}
 	for msg, want := range cases {
 		if got := classifyError(errString(msg)); got != want {
