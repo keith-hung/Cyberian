@@ -9,6 +9,10 @@
     "WEDAKA_EMP_NO": "your_employee_number",
     "WEDAKA_DEVICE_ID": "your_device_uuid",
 
+    "CHPW_BASE_URL": "https://your-password-portal.example.com/",
+    "CHPW_USERNAME": "your_username",
+    "CHPW_INSECURE": "false",
+
     "JIRA_SERVER_URL": "https://your-company.atlassian.net",
     "JIRA_USER_EMAIL": "you@example.com",
     "JIRA_API_TOKEN": "your_api_token",

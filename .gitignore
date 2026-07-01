@@ -3,11 +3,13 @@ timecard-cli/timecard
 nouveau-timecard-cli/nouveau-timecard
 wedaka-cli/wedaka
 azuredevops-cli/azuredevops
+chpw-cli/chpw
 dist/
 
 # Session files
 .timecard-session.json
 .nouveau-timecard-session.json
+.chpw-session.json
 
 # Plugin cache
 .claude-plugin/scripts/.cache/
