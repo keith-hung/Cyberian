@@ -8,9 +8,9 @@
 #   ./scripts/bump-version.sh 0.3.1
 #   ./scripts/bump-version.sh v0.3.1     # leading v is tolerated
 #
-# Touches: plugin.json, marketplace.json, the 4 CLI launchers (.sh + .ps1;
-# jira-launcher tracks upstream and is intentionally skipped), README build/tag
-# examples, and CHANGELOG.md (rolls [Unreleased] into a dated release section).
+# Touches: plugin.json, marketplace.json, the launchers (4 CLIs + slip, each .sh +
+# .ps1; jira-launcher tracks upstream and is intentionally skipped), README
+# build/tag examples, and CHANGELOG.md (rolls [Unreleased] into a dated section).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -59,8 +59,8 @@ def edit(rel, subs):
 edit(".claude-plugin/plugin.json",      [(f'"version": "{old}"', f'"version": "{new}"')])
 edit(".claude-plugin/marketplace.json", [(f'"version": "{old}"', f'"version": "{new}"')])
 
-# 3-10. CLI launchers (jira tracks its own upstream version — skip it)
-for cli in ["nouveau-timecard", "wedaka", "azuredevops", "chpw"]:
+# 3-12. Launchers: the 4 CLIs + slip (jira tracks its own upstream version — skip it)
+for cli in ["nouveau-timecard", "wedaka", "azuredevops", "chpw", "slip"]:
     edit(f"scripts/{cli}-launcher.sh",  [(f'VERSION="{oldv}"',     f'VERSION="{newv}"')])
     edit(f"scripts/{cli}-launcher.ps1", [(f'$Version = "{oldv}"',  f'$Version = "{newv}"')])
 

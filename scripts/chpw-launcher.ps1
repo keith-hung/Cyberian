@@ -2,7 +2,7 @@
 $ErrorActionPreference = "Stop"
 
 $Repo = "keith-hung/Cyberian"
-$Version = "v0.3.1"
+$Version = "v0.3.2"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $CacheDir = Join-Path $ScriptDir ".cache"
 $Bin = Join-Path $CacheDir "chpw-cli.exe"

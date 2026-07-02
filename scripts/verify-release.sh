@@ -4,9 +4,10 @@
 # Run before `git tag`/`git push` (and it also runs as the first CI job in release.yml).
 #
 # Checks:
-#   1. Version is identical across plugin.json, marketplace.json, and the 4 CLI launchers.
+#   1. Version is identical across plugin.json, marketplace.json, and every launcher
+#      (the 4 CLIs + slip, each .sh + .ps1).
 #   2. CHANGELOG.md has a dated section for that version.
-#   3. Every CLI that ships a launcher is covered by BOTH build.sh and release.yml (P2 guard).
+#   3. Every CLI/tool that ships a launcher is covered by BOTH build.sh and release.yml (P2 guard).
 #   4. No forbidden tokens in tracked files (leak-guard list, if present).
 #   5. Working tree is clean (warning only).
 #
@@ -34,7 +35,7 @@ if [ -n "${GITHUB_REF_NAME:-}" ]; then
   [ "$tagv" = "$PV" ] && ok "tag $GITHUB_REF_NAME matches files" \
     || bad "tag $GITHUB_REF_NAME does not match file version v$PV"
 fi
-for cli in nouveau-timecard wedaka azuredevops chpw; do
+for cli in nouveau-timecard wedaka azuredevops chpw slip; do
   for f in "scripts/${cli}-launcher.sh" "scripts/${cli}-launcher.ps1"; do
     lv="$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' "$f" | head -1 | sed 's/^v//')"
     [ "$lv" = "$PV" ] && ok "$f ($lv)" || bad "$f is v$lv, expected v$PV"
@@ -57,6 +58,14 @@ for cli in nouveau-timecard wedaka azuredevops chpw; do
     && ok "$dir covered by build.sh + release.yml" \
     || bad "$dir NOT covered by build.sh and/or release.yml"
 done
+# slip: dir is "slip" (not slip-cli); the build lines emit slip_<os>_<arch>.
+if [ -f "slip/go.mod" ]; then
+  grep -q "slip_" scripts/build.sh && grep -q "slip_" .github/workflows/release.yml \
+    && ok "slip covered by build.sh + release.yml" \
+    || bad "slip NOT covered by build.sh and/or release.yml"
+else
+  bad "slip/go.mod missing"
+fi
 
 echo "== 4. Leak-guard token scan =="
 TOKENS="dev/hooks/forbidden-tokens.txt"

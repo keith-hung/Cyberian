@@ -4,6 +4,7 @@ nouveau-timecard-cli/nouveau-timecard
 wedaka-cli/wedaka
 azuredevops-cli/azuredevops
 chpw-cli/chpw
+slip/slip
 dist/
 
 # Session files

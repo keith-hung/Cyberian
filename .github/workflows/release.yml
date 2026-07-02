@@ -56,6 +56,16 @@ jobs:
             fi
           done
 
+          # slip: a single-package broker, not a *-cli module — its version symbol
+          # is main.version (not cmd.Version). Cross-platform (AF_UNIX on every OS).
+          # Output name slip_<os>_<arch>[.exe] must match the slip launchers' URLs.
+          SLIP_LDFLAGS="-s -w -X main.version=${VERSION}"
+          if [ "${GOOS}" = "windows" ]; then
+            (cd slip && go build -ldflags="${SLIP_LDFLAGS}" -o "../dist/slip_windows_${GOARCH}.exe" .)
+          else
+            (cd slip && go build -ldflags="${SLIP_LDFLAGS}" -o "../dist/slip_${GOOS}_${GOARCH}" .)
+          fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}

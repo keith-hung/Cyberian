@@ -4,6 +4,24 @@
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-07-02
+
+### 新增
+
+- 新增 `slip` — 本機短命密碼 broker（Go，跨平台：Linux/macOS/WSL/Windows 10 1803+，
+  以 AF_UNIX socket 協調）。讓 AI agent 啟動的指令能取得使用者密碼，而密碼**不經過
+  agent 的可讀 context**：agent 跑 `slip daemon --timeout N -- <cmd>`（只印一個 5 位數 ID
+  到 stdout），使用者在自己終端跑 `slip set <ID>`（echo off 輸入，讀 `/dev/tty` 或
+  Windows `CONIN$`），daemon 把值餵進 `<cmd>` 的 stdin、透傳其 stdout/stderr/exit code，
+  隨後清零記憶體並移除 socket。威脅模型僅防「密碼意外洩漏進 agent transcript」，不防同
+  使用者的惡意程序。
+
+### 變更
+
+- `change-password` skill 的 agent 代跑改以 slip 為首選（新 B2）：agent 負責編排、使用者
+  以 `slip set` 於自身終端輸入每個密碼，密碼不再進入對話；只有單次有效的 OTP 會告知 agent。
+  原本「把密碼經 stdin 交給 agent」的兩段式流程保留為 last-resort（B3），供無自有終端的情境。
+
 ## [0.3.1] - 2026-07-02
 
 ### 變更
