@@ -2,7 +2,7 @@
 $ErrorActionPreference = "Stop"
 
 $Repo = "keith-hung/Cyberian"
-$Version = "v0.3.0"
+$Version = "v0.3.1"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $CacheDir = Join-Path $ScriptDir ".cache"
 $Bin = Join-Path $CacheDir "nouveau-timecard-cli.exe"
