@@ -318,14 +318,14 @@ cd chpw-cli && go build -o chpw .
 # 已退役的 timecard-cli 仍可手動建置：cd timecard-cli && go build -o timecard .
 
 # 跨平台建置（產出至 dist/）
-./scripts/build.sh v0.3.0
+./scripts/build.sh v0.3.1
 ```
 
 **Release 流程** — Push version tag 後 GitHub Actions 會自動 cross-compile 並建立 Release（6 個平台：linux/darwin/windows × amd64/arm64）：
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.3.1
+git push origin v0.3.1
 ```
 
 </details>
