@@ -23,3 +23,7 @@ dev/
 
 # Superpowers working artifacts (specs, plans) — not tracked
 docs/superpowers/
+
+# Python helper build artifacts (skills/*/*.py)
+__pycache__/
+*.pyc
