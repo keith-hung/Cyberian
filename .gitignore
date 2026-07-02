@@ -3,11 +3,13 @@ timecard-cli/timecard
 nouveau-timecard-cli/nouveau-timecard
 wedaka-cli/wedaka
 azuredevops-cli/azuredevops
+chpw-cli/chpw
 dist/
 
 # Session files
 .timecard-session.json
 .nouveau-timecard-session.json
+.chpw-session.json
 
 # Plugin cache
 .claude-plugin/scripts/.cache/
@@ -18,6 +20,9 @@ scripts/.cache/
 
 # Development notes
 dev/
+
+# Superpowers working artifacts (specs, plans) — not tracked
+docs/superpowers/
 
 # Python helper build artifacts (skills/*/*.py)
 __pycache__/

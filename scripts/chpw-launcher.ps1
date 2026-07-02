@@ -5,7 +5,7 @@ $Repo = "keith-hung/Cyberian"
 $Version = "v0.3.0"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $CacheDir = Join-Path $ScriptDir ".cache"
-$Bin = Join-Path $CacheDir "wedaka-cli.exe"
+$Bin = Join-Path $CacheDir "chpw-cli.exe"
 
 # Fast path: binary already cached
 if (Test-Path $Bin) {
@@ -34,12 +34,12 @@ if (-not $Arch) {
 }
 
 # Download binary
-$Url = "https://github.com/$Repo/releases/download/$Version/wedaka-cli_windows_${Arch}.exe"
+$Url = "https://github.com/$Repo/releases/download/$Version/chpw-cli_windows_${Arch}.exe"
 if (-not (Test-Path $CacheDir)) {
     New-Item -ItemType Directory -Path $CacheDir -Force | Out-Null
 }
 
-[Console]::Error.WriteLine("Downloading wedaka-cli $Version for windows/${Arch}...")
+[Console]::Error.WriteLine("Downloading chpw-cli $Version for windows/${Arch}...")
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     Invoke-WebRequest -Uri $Url -OutFile $Bin -UseBasicParsing

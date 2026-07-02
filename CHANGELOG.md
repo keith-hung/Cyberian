@@ -4,10 +4,15 @@
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-07-01
+## [0.3.0] - 2026-07-02
 
 ### 新增
 
+- Add `change-password` skill: change on-prem AD password from domain-joined
+  Windows (PowerShell ADSI, local, no OTP) or the off-network self-service portal
+  (`chpw-cli`: interactive `-i`, or two-step `chpw` → `--continue`; App/SMS OTP).
+  - Auto-detect domain-join + DC reachability and route to local ADSI change or
+    the chpw portal automatically.
 - 新增 `flashback` skill — 從本機的 Claude Code 逐字稿（`~/.claude/projects/*/*.jsonl`）估算每個週期（日/週/月）花在各專案的活躍工時，輸出人類可讀表格與機器可讀 JSON，完全在本機執行、不上傳任何逐字稿內容，也不依賴任何工時系統。以 `skills/flashback/flashback.py`（PEP 723、stdlib-only）作為輔助腳本，隨 plugin 內容發布，不透過 GitHub Releases 提供 binary。
 
 ## [0.2.7] - 2026-06-02

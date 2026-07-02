@@ -5,7 +5,7 @@ REPO="keith-hung/Cyberian"
 VERSION="v0.3.0"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CACHE_DIR="$SCRIPT_DIR/.cache"
-BIN="$CACHE_DIR/azuredevops-cli"
+BIN="$CACHE_DIR/chpw-cli"
 
 # Fast path: binary already cached
 if [[ -x "$BIN" ]]; then
@@ -33,10 +33,10 @@ case "${OS}_${ARCH}" in
 esac
 
 # Download binary
-URL="https://github.com/${REPO}/releases/download/${VERSION}/azuredevops-cli_${OS}_${ARCH}"
+URL="https://github.com/${REPO}/releases/download/${VERSION}/chpw-cli_${OS}_${ARCH}"
 mkdir -p "$CACHE_DIR"
 
-echo "Downloading azuredevops-cli ${VERSION} for ${OS}/${ARCH}..." >&2
+echo "Downloading chpw-cli ${VERSION} for ${OS}/${ARCH}..." >&2
 if command -v curl &>/dev/null; then
     curl -fsSL "$URL" -o "$BIN"
 elif command -v wget &>/dev/null; then
