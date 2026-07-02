@@ -43,6 +43,30 @@ For Path B, if `CHPW_BASE_URL` is not set, stop and tell the user neither path i
 available and what to configure. The user may override the automatic choice by
 asking for a specific path.
 
+## Presenting commands (make them copy-paste-ready)
+
+Any command you give the user to run MUST work when pasted verbatim — no editing:
+
+- **Resolve the path.** Expand `${CLAUDE_PLUGIN_ROOT}` to its real absolute path
+  before showing the command (run `echo "${CLAUDE_PLUGIN_ROOT}"` if unsure). In a
+  source checkout the target is the built binary, e.g. `<repo>/chpw-cli/chpw`. Never
+  leave `${CLAUDE_PLUGIN_ROOT}`, `$(...)`, or `~` unexpanded in what you hand over.
+- **Use a real invocable name.** The launcher's absolute path
+  (`.../scripts/chpw-launcher.sh`) or the built binary's absolute path — never a bare
+  `chpw` (it is not on `PATH`).
+- **No leftover placeholders.** Fill `--user` with the actual account (from
+  `CHPW_USERNAME`, or ask the user once — the username is not a secret), OR omit
+  `--user` for `-i` so the tool prompts. Do not leave `<USERNAME>` for the user to
+  edit. (`<OTP>` / the password are entered at prompts or a later step — not edited
+  into the command.)
+- **Ensure `CHPW_BASE_URL` is present for the shell that will run it.** If it is
+  already exported in the user's shell, nothing to do; otherwise prefix it inline:
+  `CHPW_BASE_URL="<portal-url>" .../chpw-launcher.sh ...`. Put the URL in the command
+  you hand the user — never in a tracked file.
+
+The snippets below use `${CLAUDE_PLUGIN_ROOT}` / `<USERNAME>` as placeholders for
+readability; always resolve them before presenting.
+
 ## Path A — domain-joined (local, no OTP)
 
 Run the PowerShell script; pipe old then new password (two lines) to stdin.
@@ -68,7 +92,9 @@ opts into the agent handling the password.
 ### B1 — the user runs it (interactive, recommended)
 
 Give the user this command to run in THEIR OWN terminal (passwords are typed at hidden
-prompts and never enter this conversation). Fill in the real launcher path and username:
+prompts and never enter this conversation). Present it fully resolved per "Presenting
+commands" above — absolute path, `--user` filled (or omitted so it prompts), no
+placeholders, `CHPW_BASE_URL` ensured — so they can paste and run it as-is:
 
 ```bash
 ${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh -i --user <USERNAME> --method APP
