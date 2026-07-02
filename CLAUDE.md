@@ -15,7 +15,7 @@ Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plu
 ├── nouveau-timecard-cli/ Go CLI — timesheet for the rebuilt Smart Timecard (draft only)
 ├── wedaka-cli/       Go CLI — clock-in/out attendance (REST API)
 ├── azuredevops-cli/  Go CLI — Azure DevOps Server projects, repos & PRs (REST API)
-├── chpw-cli/         Go CLI — change on-prem AD password via the self-service portal (two-step, SMS OTP)
+├── chpw-cli/         Go CLI — change on-prem AD password via the self-service portal (interactive -i, or two-step; app/SMS OTP)
 ├── .claude/          Claude Code project config
 │   ├── settings.local.json  User-specific env vars (gitignored, contains credentials)
 │   └── settings.json.example  Template for settings.local.json
