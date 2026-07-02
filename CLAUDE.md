@@ -105,7 +105,7 @@ Config via env vars: `AZDO_BASE_URL`, `AZDO_COLLECTION`, `AZDO_DOMAIN` (optional
 
 HTML form-based HTTP client for the off-network self-service AD password-change portal (antiforgery token + form POST, like nouveau-timecard-cli). Two-step flow with a human-supplied SMS OTP in the middle:
 
-1. `login` — verifies the current password; the server texts a 6-digit OTP to the registered phone and the session (cookies + form token) is persisted to `.chpw-session.json`
+1. `login` — POSTs to the site root with a required OTP-delivery method (`--method APP|SMS`, default `APP`; `APP` = i-daka/Email, `SMS` = mobile text) alongside the current password; the server then delivers a 6-digit OTP and the session (cookies + form token) is persisted to `.chpw-session.json`
 2. `submit` — sends the new password plus the OTP within its validity window to complete the change
 
 Commands: `login`, `submit`, `version`

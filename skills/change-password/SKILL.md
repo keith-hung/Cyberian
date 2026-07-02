@@ -68,8 +68,11 @@ Two steps with a human OTP in the middle. Requires `CHPW_BASE_URL` (and usually
 
    ```bash
    printf '%s\n' "$OLD_PASSWORD" | \
-     ${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh login --pass-stdin --user "<USERNAME>"
+     ${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh login --pass-stdin --user "<USERNAME>" --method APP
    ```
+
+   `--method` selects OTP delivery: `APP` (i-daka/Email, the portal default) or `SMS`
+   (mobile text). Defaults to `APP`.
 
 2. Ask the user for the OTP they just received.
 

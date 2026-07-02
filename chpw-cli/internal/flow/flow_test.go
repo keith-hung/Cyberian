@@ -27,12 +27,12 @@ const completeHTML = `<div>恭喜您！新密碼已修改完成！</div>`
 func stubServer(t *testing.T) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodGet && (r.URL.Path == "/" || r.URL.Path == "/ChangePassword/Login"):
+		case r.Method == http.MethodGet && r.URL.Path == "/":
 			http.SetCookie(w, &http.Cookie{Name: "__RequestVerificationToken", Value: "cookie", Path: "/"})
 			w.Write([]byte(loginHTML))
-		case r.Method == http.MethodPost && r.URL.Path == "/ChangePassword/Login":
+		case r.Method == http.MethodPost && r.URL.Path == "/":
 			r.ParseForm()
-			if r.PostForm.Get("Password") == "good" {
+			if r.PostForm.Get("Password") == "good" && r.PostForm.Get("Method") != "" {
 				w.Write([]byte(otpHTML))
 			} else {
 				w.Write([]byte(loginErrHTML))
@@ -63,7 +63,7 @@ func TestLoginSuccessPersistsSession(t *testing.T) {
 	defer srv.Close()
 	sess := filepath.Join(t.TempDir(), "s.json")
 
-	res, err := newClient(t, srv.URL, sess).Login("good")
+	res, err := newClient(t, srv.URL, sess).Login("good", "APP")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestLoginSuccessPersistsSession(t *testing.T) {
 func TestLoginBadPassword(t *testing.T) {
 	srv := stubServer(t)
 	defer srv.Close()
-	_, err := newClient(t, srv.URL, filepath.Join(t.TempDir(), "s.json")).Login("wrong")
+	_, err := newClient(t, srv.URL, filepath.Join(t.TempDir(), "s.json")).Login("wrong", "APP")
 	if err == nil || !strings.Contains(err.Error(), "authentication") {
 		t.Fatalf("err = %v, want authentication error", err)
 	}
@@ -89,7 +89,7 @@ func TestSubmitWrongOtp(t *testing.T) {
 	srv := stubServer(t)
 	defer srv.Close()
 	sess := filepath.Join(t.TempDir(), "s.json")
-	if _, err := newClient(t, srv.URL, sess).Login("good"); err != nil {
+	if _, err := newClient(t, srv.URL, sess).Login("good", "APP"); err != nil {
 		t.Fatal(err)
 	}
 	err := newClient(t, srv.URL, sess).Submit("NewPass123!", "000000")
@@ -104,5 +104,32 @@ func TestSubmitWithoutLogin(t *testing.T) {
 	err := newClient(t, srv.URL, filepath.Join(t.TempDir(), "missing.json")).Submit("NewPass123!", "123456")
 	if err == nil {
 		t.Fatal("expected error when no session exists")
+	}
+}
+
+func TestLoginSendsSelectedMethod(t *testing.T) {
+	var gotMethod string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/" {
+			http.SetCookie(w, &http.Cookie{Name: "__RequestVerificationToken", Value: "cookie", Path: "/"})
+			w.Write([]byte(loginHTML))
+			return
+		}
+		if r.Method == http.MethodPost && r.URL.Path == "/" {
+			r.ParseForm()
+			gotMethod = r.PostForm.Get("Method")
+			w.Write([]byte(otpHTML))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	c := newClient(t, srv.URL, filepath.Join(t.TempDir(), "s.json"))
+	if _, err := c.Login("good", "SMS"); err != nil {
+		t.Fatal(err)
+	}
+	if gotMethod != "SMS" {
+		t.Errorf("Method = %q, want SMS", gotMethod)
 	}
 }

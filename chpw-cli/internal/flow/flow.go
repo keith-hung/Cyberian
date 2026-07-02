@@ -72,7 +72,7 @@ func (c *Client) resultBody(post *httpclient.Response) (string, error) {
 
 // Login posts credentials. On success the server sends an SMS OTP and returns
 // the OTP form; we persist cookies + that form's token for the submit step.
-func (c *Client) Login(password string) (LoginResult, error) {
+func (c *Client) Login(password, method string) (LoginResult, error) {
 	page, err := c.http.Get("")
 	if err != nil {
 		return LoginResult{}, err
@@ -85,9 +85,10 @@ func (c *Client) Login(password string) (LoginResult, error) {
 	form := url.Values{}
 	form.Set("Username", c.cfg.Username)
 	form.Set("Password", password)
+	form.Set("Method", method)
 	form.Set("__RequestVerificationToken", token)
 
-	post, err := c.http.PostForm("ChangePassword/Login", form)
+	post, err := c.http.PostForm("", form)
 	if err != nil {
 		return LoginResult{}, err
 	}

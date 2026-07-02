@@ -2,11 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/keith-hung/chpw-cli/internal/flow"
 	"github.com/keith-hung/chpw-cli/internal/types"
 	"github.com/spf13/cobra"
 )
+
+var loginMethod string
 
 var loginCmd = &cobra.Command{
 	Use:   "login",
@@ -16,7 +19,11 @@ var loginCmd = &cobra.Command{
 		if err != nil {
 			ExitError(err.Error(), classifyError(err))
 		}
-		res, err := c.Login(gf.Pass)
+		method := strings.ToUpper(strings.TrimSpace(loginMethod))
+		if method != "APP" && method != "SMS" {
+			ExitError("--method must be APP or SMS", 3)
+		}
+		res, err := c.Login(gf.Pass, method)
 		if err != nil {
 			ExitError(err.Error(), classifyError(err))
 		}
@@ -51,4 +58,5 @@ func newFlow() (*flow.Client, error) {
 
 func init() {
 	rootCmd.AddCommand(loginCmd)
+	loginCmd.Flags().StringVar(&loginMethod, "method", "APP", "OTP delivery method: APP (i-daka/Email) or SMS")
 }
