@@ -9,7 +9,18 @@ permissions:
   contents: write
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify release consistency
+        # Checks version consistency, CHANGELOG entry, tag/file match, and CLI
+        # build coverage. Fails the release early if the tag was cut inconsistently.
+        run: bash scripts/verify-release.sh
+
   build:
+    needs: verify
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,81 +33,28 @@ jobs:
         with:
           go-version-file: nouveau-timecard-cli/go.mod
 
-      - name: Build wedaka-cli
+      - name: Build CLIs
         env:
           CGO_ENABLED: "0"
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
+          set -euo pipefail
+          # Keep this list in sync with scripts/build.sh — verify-release.sh enforces it.
+          CLIS="nouveau-timecard-cli wedaka-cli azuredevops-cli chpw-cli"
           VERSION="${GITHUB_REF_NAME}"
           COMMIT="$(git rev-parse --short HEAD)"
           BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          MODULE="$(grep '^module' wedaka-cli/go.mod | awk '{print $2}')"
-          LDFLAGS="-s -w -X ${MODULE}/cmd.Version=${VERSION} -X ${MODULE}/cmd.Commit=${COMMIT} -X ${MODULE}/cmd.BuildDate=${BUILD_DATE}"
-
           mkdir -p dist
-          if [ "${GOOS}" = "windows" ]; then
-            cd wedaka-cli && go build -ldflags="${LDFLAGS}" -o "../dist/wedaka-cli_windows_${GOARCH}.exe" .
-          else
-            cd wedaka-cli && go build -ldflags="${LDFLAGS}" -o "../dist/wedaka-cli_${GOOS}_${GOARCH}" .
-          fi
-
-      - name: Build azuredevops-cli
-        env:
-          CGO_ENABLED: "0"
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
-          COMMIT="$(git rev-parse --short HEAD)"
-          BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          MODULE="$(grep '^module' azuredevops-cli/go.mod | awk '{print $2}')"
-          LDFLAGS="-s -w -X ${MODULE}/cmd.Version=${VERSION} -X ${MODULE}/cmd.Commit=${COMMIT} -X ${MODULE}/cmd.BuildDate=${BUILD_DATE}"
-
-          mkdir -p dist
-          if [ "${GOOS}" = "windows" ]; then
-            cd azuredevops-cli && go build -ldflags="${LDFLAGS}" -o "../dist/azuredevops-cli_windows_${GOARCH}.exe" .
-          else
-            cd azuredevops-cli && go build -ldflags="${LDFLAGS}" -o "../dist/azuredevops-cli_${GOOS}_${GOARCH}" .
-          fi
-
-      - name: Build nouveau-timecard-cli
-        env:
-          CGO_ENABLED: "0"
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
-          COMMIT="$(git rev-parse --short HEAD)"
-          BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          MODULE="$(grep '^module' nouveau-timecard-cli/go.mod | awk '{print $2}')"
-          LDFLAGS="-s -w -X ${MODULE}/cmd.Version=${VERSION} -X ${MODULE}/cmd.Commit=${COMMIT} -X ${MODULE}/cmd.BuildDate=${BUILD_DATE}"
-
-          mkdir -p dist
-          if [ "${GOOS}" = "windows" ]; then
-            cd nouveau-timecard-cli && go build -ldflags="${LDFLAGS}" -o "../dist/nouveau-timecard-cli_windows_${GOARCH}.exe" .
-          else
-            cd nouveau-timecard-cli && go build -ldflags="${LDFLAGS}" -o "../dist/nouveau-timecard-cli_${GOOS}_${GOARCH}" .
-          fi
-
-      - name: Build chpw-cli
-        env:
-          CGO_ENABLED: "0"
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
-          COMMIT="$(git rev-parse --short HEAD)"
-          BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          MODULE="$(grep '^module' chpw-cli/go.mod | awk '{print $2}')"
-          LDFLAGS="-s -w -X ${MODULE}/cmd.Version=${VERSION} -X ${MODULE}/cmd.Commit=${COMMIT} -X ${MODULE}/cmd.BuildDate=${BUILD_DATE}"
-
-          mkdir -p dist
-          if [ "${GOOS}" = "windows" ]; then
-            cd chpw-cli && go build -ldflags="${LDFLAGS}" -o "../dist/chpw-cli_windows_${GOARCH}.exe" .
-          else
-            cd chpw-cli && go build -ldflags="${LDFLAGS}" -o "../dist/chpw-cli_${GOOS}_${GOARCH}" .
-          fi
+          for cli in $CLIS; do
+            MODULE="$(grep '^module' "$cli/go.mod" | awk '{print $2}')"
+            LDFLAGS="-s -w -X ${MODULE}/cmd.Version=${VERSION} -X ${MODULE}/cmd.Commit=${COMMIT} -X ${MODULE}/cmd.BuildDate=${BUILD_DATE}"
+            if [ "${GOOS}" = "windows" ]; then
+              (cd "$cli" && go build -ldflags="${LDFLAGS}" -o "../dist/${cli}_windows_${GOARCH}.exe" .)
+            else
+              (cd "$cli" && go build -ldflags="${LDFLAGS}" -o "../dist/${cli}_${GOOS}_${GOARCH}" .)
+            fi
+          done
 
       - uses: actions/upload-artifact@v4
         with:

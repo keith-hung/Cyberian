@@ -139,6 +139,27 @@ All 25 env vars across 6 skills can be centrally configured in `.claude/settings
 - Legacy `timecard-cli` only (old TimeCard backend): note fields forbid `#$%^&*=+{}[]|?'"`; entry indices are 0-9 (max 10 entries per week); daily hours must not exceed 8 per day
 - `nouveau-timecard-cli` instead follows the rebuilt backend's own validation: hours in 0.5 increments, description ≤ 100 chars, project/activity required. The new draft path enforces no per-day cap and no forbidden-character rule, so those legacy limits are intentionally not ported (porting the per-day cap would also break leave sync on days that already have work)
 
+## Public Repo Safety (Leak-Guard)
+
+This repo (`github.com/keith-hung/Cyberian`) is **public**; once content is pushed
+(and indexed/cached) a leak is effectively irreversible. Before ANY commit or push:
+
+- **No real project/client names or internal identifiers** may appear in git-tracked
+  files — not even as illustrative examples in SKILL.md, docstrings, help text, README,
+  or CHANGELOG. Genericize to neutral placeholders (`Alpha` / `Beta` / `web-app`).
+- **Judgment rule (grep cannot enforce this):** treat ANY company or client name as
+  suspect; a **financial-industry** name is a strong red flag. When you see one, stop and
+  genericize it rather than committing it.
+- If a leak sits in an **unpushed** commit, **AMEND** it (do not add a follow-up commit)
+  so the leaky content never enters pushed history. `dev/` is gitignored — real names may
+  stay there.
+
+A local **leak-guard hook** (`dev/hooks/leak-guard.sh`, gitignored) blocks `git commit` /
+`git push` when a tracked file matches a **known-token** list (`dev/hooks/forbidden-tokens.txt`,
+gitignored — the only place those tokens are stored; never commit them). Caveats: it only
+fires for git commands **Claude runs via Bash** (not manual terminal commits) and only
+catches the **known** list — the judgment rule above is still yours to apply.
+
 ## Version Bump Checklist
 
 When bumping the version (e.g., `v0.2.2` → `v0.2.3`), update the following files **in order**:
