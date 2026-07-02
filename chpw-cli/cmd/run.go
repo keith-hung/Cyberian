@@ -113,12 +113,14 @@ func runInteractive() {
 		ExitError("OTP is required", 3)
 	}
 	newPass := promptPassword("New password: ")
-	confirm := promptPassword("Confirm new password: ")
 	if newPass == "" {
 		ExitError("new password is required", 3)
 	}
-	if newPass != confirm {
-		ExitError("new passwords do not match", 3)
+	if !fNoConfirm {
+		confirm := promptPassword("Confirm new password: ")
+		if newPass != confirm {
+			ExitError("new passwords do not match", 3)
+		}
 	}
 	if err := c.Submit(newPass, otp); err != nil {
 		ExitError(err.Error(), classifyError(err))

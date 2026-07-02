@@ -103,7 +103,8 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh -i --user <USERNAME> --method APP
 It walks through: `Current password:` (hidden) → OTP sent → `Enter OTP:` →
 `New password:` / `Confirm new password:` (hidden) → `{"success":true,"message":"password changed"}`.
 `--method` selects delivery: `APP` (i-daka/Email, default) or `SMS`. `-i` requires a
-terminal; the user can omit `--user` and it will prompt.
+terminal; the user can omit `--user` and it will prompt. By default `-i` asks for the
+new password twice (confirmation); pass `--no-confirm` to enter it once.
 
 ### B2 — agent-driven (two-step; only after the user opts in)
 

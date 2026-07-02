@@ -30,6 +30,7 @@ var (
 	fContinue    bool
 	fOtp         string
 	fMethod      string
+	fNoConfirm   bool
 )
 
 var rootCmd = &cobra.Command{
@@ -94,6 +95,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&fContinue, "continue", false, "Second step: submit new password + OTP (after a prior run)")
 	rootCmd.Flags().StringVar(&fOtp, "otp", "", "One-time password (use with --continue)")
 	rootCmd.Flags().StringVar(&fMethod, "method", "APP", "OTP delivery method: APP (i-daka/Email) or SMS")
+	rootCmd.Flags().BoolVar(&fNoConfirm, "no-confirm", false, "Skip the new-password confirmation prompt (interactive mode only)")
 }
 
 func envOrDefault(key, fallback string) string {
