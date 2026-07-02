@@ -24,11 +24,13 @@ they explicitly request a specific path.
 **Step 1 — detect** (run via `powershell.exe`; on WSL wrap the script path with `wslpath -w`):
 
 ```bash
-powershell.exe -NoProfile -File "$(wslpath -w "${CLAUDE_PLUGIN_ROOT}/skills/change-password/local-change.ps1")" -Detect
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w "${CLAUDE_PLUGIN_ROOT}/skills/change-password/local-change.ps1")" -Detect
 ```
 
 Prints JSON, e.g. `{"domainJoined":true,"userIsDomain":true,"dcReachable":true,"domain":"...","user":"...","adViable":true}`.
 If `powershell.exe` is missing or errors (e.g. macOS), treat it as `adViable=false`.
+(`-ExecutionPolicy Bypass` lets the local script run even under a Restricted machine
+policy; it affects only this invocation, not the machine.)
 
 **Step 2 — route on `adViable`:**
 
@@ -48,7 +50,7 @@ Domain and user are auto-detected from the logged-in session — no flags needed
 Never put passwords on the command line.
 
 ```bash
-printf '%s\n%s\n' "$OLD" "$NEW" | powershell.exe -NoProfile -File \
+printf '%s\n%s\n' "$OLD" "$NEW" | powershell.exe -NoProfile -ExecutionPolicy Bypass -File \
   "$(wslpath -w "${CLAUDE_PLUGIN_ROOT}/skills/change-password/local-change.ps1")"
 ```
 
