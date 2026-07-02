@@ -18,3 +18,7 @@ scripts/.cache/
 
 # Development notes
 dev/
+
+# Python helper build artifacts (skills/*/*.py)
+__pycache__/
+*.pyc
