@@ -7,6 +7,7 @@ package flow
 import (
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/keith-hung/chpw-cli/internal/httpclient"
@@ -35,6 +36,10 @@ type Config struct {
 type Client struct {
 	http *httpclient.Client
 	cfg  Config
+
+	// submitToken caches the OTP-page antiforgery token in memory so a single
+	// process can go straight from Login to Submit without touching disk.
+	submitToken string
 }
 
 // LoginResult reports the outcome of a successful login step.
@@ -42,6 +47,15 @@ type LoginResult struct {
 	Message    string
 	OtpTTL     int
 	SessionTTL int
+}
+
+// otpSentMessage reports where the OTP was delivered, based on the method
+// chosen at login.
+func otpSentMessage(method string) string {
+	if strings.ToUpper(method) == "SMS" {
+		return "OTP sent via SMS to your registered phone"
+	}
+	return "OTP sent via i-daka app / email"
 }
 
 // New creates a flow Client.
@@ -102,18 +116,17 @@ func (c *Client) Login(password, method string) (LoginResult, error) {
 		if submitToken == "" {
 			return LoginResult{}, fmt.Errorf("could not find antiforgery token on OTP page")
 		}
-		if err := c.http.SaveSession(c.cfg.SessionFile, map[string]interface{}{
-			"submitToken": submitToken,
-			"username":    c.cfg.Username,
-			"savedAt":     time.Now().Format(time.RFC3339),
-		}); err != nil {
-			return LoginResult{}, fmt.Errorf("persisting session: %w", err)
+		c.submitToken = submitToken
+		if c.cfg.SessionFile != "" {
+			if err := c.http.SaveSession(c.cfg.SessionFile, map[string]interface{}{
+				"submitToken": submitToken,
+				"username":    c.cfg.Username,
+				"savedAt":     time.Now().Format(time.RFC3339),
+			}); err != nil {
+				return LoginResult{}, fmt.Errorf("persisting session: %w", err)
+			}
 		}
-		return LoginResult{
-			Message:    "OTP sent to your registered phone",
-			OtpTTL:     OtpTTL,
-			SessionTTL: SessionTTL,
-		}, nil
+		return LoginResult{Message: otpSentMessage(method), OtpTTL: OtpTTL, SessionTTL: SessionTTL}, nil
 	}
 
 	if parser.IsLoginPage(body) {
@@ -125,20 +138,25 @@ func (c *Client) Login(password, method string) (LoginResult, error) {
 	return LoginResult{}, fmt.Errorf("unexpected response after login (status %d)", post.Status)
 }
 
-// Submit loads the persisted session and posts the new password + OTP.
+// Submit posts the new password + OTP, using the in-memory token from a
+// prior Login on this same Client when available, otherwise falling back to
+// the persisted session file (for a login→submit split across processes).
 func (c *Client) Submit(newPassword, otp string) error {
-	info, err := c.http.LoadSession(c.cfg.SessionFile)
-	if err != nil {
-		return fmt.Errorf("no pending change-password session (run login first): %w", err)
-	}
-	submitToken, _ := info["submitToken"].(string)
+	submitToken := c.submitToken
 	if submitToken == "" {
-		return fmt.Errorf("session is missing the submit token; run login again")
-	}
-	if savedStr, ok := info["savedAt"].(string); ok {
-		if savedAt, perr := time.Parse(time.RFC3339, savedStr); perr == nil {
-			if time.Since(savedAt) > submitGrace {
-				return fmt.Errorf("validation: session likely expired (>%ds); run login again", int(submitGrace.Seconds()))
+		info, err := c.http.LoadSession(c.cfg.SessionFile)
+		if err != nil {
+			return fmt.Errorf("no pending change-password session (run login first): %w", err)
+		}
+		submitToken, _ = info["submitToken"].(string)
+		if submitToken == "" {
+			return fmt.Errorf("session is missing the submit token; run login again")
+		}
+		if savedStr, ok := info["savedAt"].(string); ok {
+			if savedAt, perr := time.Parse(time.RFC3339, savedStr); perr == nil {
+				if time.Since(savedAt) > submitGrace {
+					return fmt.Errorf("validation: session likely expired (>%ds); run login again", int(submitGrace.Seconds()))
+				}
 			}
 		}
 	}

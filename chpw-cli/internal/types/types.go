@@ -1,12 +1,19 @@
 // Package types defines shared data structures for the chpw CLI.
 package types
 
+// NextStep tells the caller (human or agent) what to run after `login`.
+type NextStep struct {
+	Command string `json:"command"`
+	Hint    string `json:"hint"`
+}
+
 // LoginOutput is the JSON output for the `login` command.
 type LoginOutput struct {
-	Success    bool   `json:"success"`
-	Message    string `json:"message"`
-	OtpTTL     int    `json:"otp_ttl"`
-	SessionTTL int    `json:"session_ttl"`
+	Success    bool     `json:"success"`
+	Message    string   `json:"message"`
+	OtpTTL     int      `json:"otp_ttl"`
+	SessionTTL int      `json:"session_ttl"`
+	Next       NextStep `json:"next"`
 }
 
 // SubmitOutput is the JSON output for the `submit` command.

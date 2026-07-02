@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/keith-hung/chpw-cli/internal/flow"
 	"github.com/keith-hung/chpw-cli/internal/types"
 	"github.com/spf13/cobra"
 )
@@ -17,9 +18,11 @@ var submitCmd = &cobra.Command{
 		if !gf.PassStdin || gf.Pass == "" {
 			ExitError("new password required via --pass-stdin", 3)
 		}
-		c, err := newFlow()
+		if gf.URL == "" {
+			ExitError("config: --url or CHPW_BASE_URL is required", 2)
+		}
+		c, err := flow.New(flow.Config{BaseURL: gf.URL, SessionFile: gf.SessionFile, Insecure: gf.Insecure})
 		if err != nil {
-			// newFlow also checks --pass-stdin/user/url; reuse its messages.
 			ExitError(err.Error(), classifyError(err))
 		}
 		if err := c.Submit(gf.Pass, submitOtp); err != nil {

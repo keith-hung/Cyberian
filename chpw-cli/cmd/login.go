@@ -32,6 +32,10 @@ var loginCmd = &cobra.Command{
 			Message:    res.Message,
 			OtpTTL:     res.OtpTTL,
 			SessionTTL: res.SessionTTL,
+			Next: types.NextStep{
+				Command: "chpw submit --pass-stdin --otp <OTP>",
+				Hint:    fmt.Sprintf("Pipe the NEW password to stdin; same directory, within %ds.", res.OtpTTL),
+			},
 		}, gf.Pretty)
 		return nil
 	},

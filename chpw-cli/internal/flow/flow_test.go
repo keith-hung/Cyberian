@@ -107,6 +107,45 @@ func TestSubmitWithoutLogin(t *testing.T) {
 	}
 }
 
+// TestChangeInMemoryFlow proves a single Client can go straight from Login to
+// Submit without ever touching a session file (needed by the interactive
+// `change` command, which drives both steps within one process).
+func TestChangeInMemoryFlow(t *testing.T) {
+	srv := stubServer(t)
+	defer srv.Close()
+
+	c := newClient(t, srv.URL, "")
+	if _, err := c.Login("good", "APP"); err != nil {
+		t.Fatalf("login: %v", err)
+	}
+	if err := c.Submit("NewPass1!", "123456"); err != nil {
+		t.Fatalf("submit (in-memory token, same client): %v", err)
+	}
+}
+
+// TestOtpMessageByMethod checks the login success message reflects the
+// chosen OTP delivery method.
+func TestOtpMessageByMethod(t *testing.T) {
+	srv := stubServer(t)
+	defer srv.Close()
+
+	smsRes, err := newClient(t, srv.URL, filepath.Join(t.TempDir(), "s.json")).Login("good", "SMS")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(smsRes.Message, "SMS") {
+		t.Errorf("SMS message = %q, want it to mention SMS", smsRes.Message)
+	}
+
+	appRes, err := newClient(t, srv.URL, filepath.Join(t.TempDir(), "s.json")).Login("good", "APP")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(appRes.Message, "email") {
+		t.Errorf("APP message = %q, want it to mention email", appRes.Message)
+	}
+}
+
 func TestLoginSendsSelectedMethod(t *testing.T) {
 	var gotMethod string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
