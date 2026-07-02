@@ -85,9 +85,18 @@ Common failures: wrong old password, password-policy violation, or DC unreachabl
 ## Path B — off-network self-service portal (OTP)
 
 The portal sends an OTP (via the i-daka app / email, or SMS) after you submit your
-current password. Two ways to run it, by who is at the keyboard. **Default to B1** so
-the password stays in the user's own terminal; use B2 only when the user explicitly
-opts into the agent handling the password.
+current password. Three ways to run it, by who is at the keyboard and whether the
+agent orchestrates:
+
+- **B1 — the user runs the whole interactive command** (default; simplest).
+- **B2 — the agent orchestrates via `slip`** (recommended when the user wants the
+  agent to drive but the password must stay out of this conversation). Needs the
+  user's own terminal (Linux / macOS / WSL / Windows 10 1803+).
+- **B3 — the agent drives and the password passes through this conversation**
+  (last resort; only when the user has no terminal of their own and opts in).
+
+Prefer B1 or B2 — in both, the password stays in the user's own terminal. Use B3
+only when neither is possible.
 
 ### B1 — the user runs it (interactive, recommended)
 
@@ -106,7 +115,63 @@ It walks through: `Current password:` (hidden) → OTP sent → `Enter OTP:` →
 terminal; the user can omit `--user` and it will prompt. By default `-i` asks for the
 new password twice (confirmation); pass `--no-confirm` to enter it once.
 
-### B2 — agent-driven (two-step; only after the user opts in)
+### B2 — agent-orchestrated via `slip` (recommended agent-driven path)
+
+The agent drives the two-step portal flow, but each password is typed by the user
+at their own terminal through `slip` and never enters this conversation. `slip` is
+a short-lived local broker: the agent starts it wrapping a `chpw` step; it prints a
+5-digit ID (and nothing else) to stdout and blocks; the user runs `slip set <ID>`
+in their own terminal and types the password; `slip` pipes that into `chpw`'s stdin
+and forwards only `chpw`'s JSON output and exit code back to the agent.
+
+Requires the user to have their own terminal on the SAME machine. `slip` is
+cross-platform (Linux / macOS / WSL / Windows 10 1803+); on native Windows use
+`slip-launcher.ps1` / `chpw-launcher.ps1` instead of the `.sh` scripts below.
+Present every command fully resolved per "Presenting commands" above. In a source
+checkout the built binaries are `<repo>/slip/slip` and `<repo>/chpw-cli/chpw`; via
+the plugin they are the launcher scripts shown below. Both `slip` invocations must
+run from the SAME directory (so `chpw` finds `.chpw-session.json` between steps).
+
+Step 1 — the agent starts the broker wrapping `chpw` step 1 (sends the OTP):
+
+```bash
+CHPW_BASE_URL="<portal-url>" ${CLAUDE_PLUGIN_ROOT}/scripts/slip-launcher.sh \
+  daemon --timeout 120 -- \
+  ${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh --user <USERNAME> --method APP --pass-stdin
+```
+
+`slip` prints an ID. Tell the user to run, in THEIR OWN terminal, and type their
+CURRENT password at the hidden `Enter value:` prompt:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/slip-launcher.sh set <ID>
+```
+
+`chpw` then sends the OTP, persists `.chpw-session.json`, and prints its JSON `next`
+command — which the agent sees via `slip`'s forwarded stdout. Ask the user for the
+OTP they received (the OTP is single-use and may be shared with the agent; the
+password is not).
+
+Step 2 — within the OTP validity window, from the SAME directory, the agent starts
+a second broker wrapping `chpw` step 2:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/slip-launcher.sh \
+  daemon --timeout 120 -- \
+  ${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh --continue --pass-stdin --otp <OTP>
+```
+
+`slip` prints a new ID; tell the user to run `slip-launcher.sh set <ID>` and type
+their NEW password. Output (forwarded from `chpw`):
+`{"success":true,"message":"password changed"}` or a structured error (`validation:`
+for wrong OTP / weak password / expired session; `authentication:` for a wrong
+current password at step 1).
+
+### B3 — agent-driven, password through the agent (last resort)
+
+Only when the user has no terminal of their own AND explicitly opts in — here the
+password DOES pass through this conversation. Prefer B1 or B2 whenever the user has
+their own terminal.
 
 Step 1 — sends the OTP and prints the next command:
 
@@ -155,4 +220,9 @@ cloud action is needed.
 - Passwords are passed only via stdin — never as flags, never echoed, never written to files.
 - The session file (`.chpw-session.json`) holds cookies + a form token only, never a password.
 - The portal URL and any AD details live in env/settings, never in tracked files.
-- The user enters passwords in their own terminal (Path A / Path B1); the agent only handles the password when the user explicitly chooses the two-step agent path (B2).
+- The user enters passwords in their own terminal in Path A, B1, and B2. In B2 the
+  agent starts the `slip` broker and sees only `chpw`'s JSON output and exit code —
+  the password goes from the user's terminal straight into `chpw`'s stdin, never
+  through the agent's context. `slip`'s threat model covers accidental exposure into
+  the agent transcript only, not a malicious same-user process. The password passes
+  through this conversation ONLY in B3, which the user must explicitly choose.

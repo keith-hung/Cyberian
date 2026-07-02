@@ -16,6 +16,7 @@ Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plu
 ├── wedaka-cli/       Go CLI — clock-in/out attendance (REST API)
 ├── azuredevops-cli/  Go CLI — Azure DevOps Server projects, repos & PRs (REST API)
 ├── chpw-cli/         Go CLI — change on-prem AD password via the self-service portal (interactive -i, or two-step; app/SMS OTP)
+├── slip/             Go — ephemeral local secret broker (cross-platform; single package, no cobra). Hands a secret from the user's terminal into a spawned command's stdin without it entering the agent's context. Used by the change-password skill's B2 path
 ├── .claude/          Claude Code project config
 │   ├── settings.local.json  User-specific env vars (gitignored, contains credentials)
 │   └── settings.json.example  Template for settings.local.json
@@ -115,6 +116,33 @@ Config via env vars: `CHPW_BASE_URL`, `CHPW_USERNAME` (optional), `CHPW_INSECURE
 
 The `change-password` skill also covers a second, CLI-free path: it runs `skills/change-password/local-change.ps1 -Detect` first and, when the machine is domain-joined with a reachable DC, uses the local ADSI change (domain/user auto-detected from the session, overridable via `-Domain`/`-User`); otherwise it falls back to the chpw portal automatically.
 
+### slip (ephemeral local secret broker)
+
+`slip` is deliberately unlike the other CLIs: a single `package main` (no cobra, no
+`internal/`, no JSON-only convention) with only `golang.org/x/term` beyond stdlib.
+It is a broker/wrapper, not an API client, so it forwards a spawned command's
+stdout/stderr/exit code verbatim. It is **cross-platform**: it coordinates over a
+Unix domain socket on every OS (Windows supports AF_UNIX since Windows 10 1803 /
+Server 2019) and reads the secret from the terminal device (`/dev/tty` on Unix,
+`CONIN$` on Windows — see `slip/tty_unix.go` / `slip/tty_windows.go`).
+
+- `slip daemon --timeout <s> -- <cmd> [args...]` — listens on a per-user socket
+  (`$XDG_RUNTIME_DIR/slip/<ID>.sock` → `%LOCALAPPDATA%\slip` on Windows → `~/.slip`),
+  prints ONLY a random 5-digit ID to stdout, blocks; on a value it pipes it into
+  `<cmd>`'s stdin, runs it, forwards output/exit code, zeroes the value
+  (best-effort), removes the socket, exits. One-shot.
+- `slip set <ID>` — reads a secret from the terminal device with echo off and sends
+  it to the daemon. The secret is never echoed or printed.
+
+Threat model: prevents ONLY accidental exposure of a secret into an agent's readable
+context (stdout/logs). It does NOT defend against a malicious same-user process
+(which could read memory or the socket). No crypto, no access control by design.
+
+Its version symbol is `main.version` (not `cmd.Version`), its module dir is `slip`
+(not `slip-cli`), and its release artifact is `slip_<os>_<arch>[.exe]`. The
+`change-password` skill's B2 path drives it to keep the AD password out of the
+agent's context. Per-platform tests live in `slip/test/e2e.sh` and `slip/test/e2e.ps1`.
+
 ### Shared CLI patterns
 
 All CLIs follow the same conventions:
@@ -139,6 +167,27 @@ All 25 env vars across 6 skills can be centrally configured in `.claude/settings
 - Legacy `timecard-cli` only (old TimeCard backend): note fields forbid `#$%^&*=+{}[]|?'"`; entry indices are 0-9 (max 10 entries per week); daily hours must not exceed 8 per day
 - `nouveau-timecard-cli` instead follows the rebuilt backend's own validation: hours in 0.5 increments, description ≤ 100 chars, project/activity required. The new draft path enforces no per-day cap and no forbidden-character rule, so those legacy limits are intentionally not ported (porting the per-day cap would also break leave sync on days that already have work)
 
+## Public Repo Safety (Leak-Guard)
+
+This repo (`github.com/keith-hung/Cyberian`) is **public**; once content is pushed
+(and indexed/cached) a leak is effectively irreversible. Before ANY commit or push:
+
+- **No real project/client names or internal identifiers** may appear in git-tracked
+  files — not even as illustrative examples in SKILL.md, docstrings, help text, README,
+  or CHANGELOG. Genericize to neutral placeholders (`Alpha` / `Beta` / `web-app`).
+- **Judgment rule (grep cannot enforce this):** treat ANY company or client name as
+  suspect; a **financial-industry** name is a strong red flag. When you see one, stop and
+  genericize it rather than committing it.
+- If a leak sits in an **unpushed** commit, **AMEND** it (do not add a follow-up commit)
+  so the leaky content never enters pushed history. `dev/` is gitignored — real names may
+  stay there.
+
+A local **leak-guard hook** (`dev/hooks/leak-guard.sh`, gitignored) blocks `git commit` /
+`git push` when a tracked file matches a **known-token** list (`dev/hooks/forbidden-tokens.txt`,
+gitignored — the only place those tokens are stored; never commit them). Caveats: it only
+fires for git commands **Claude runs via Bash** (not manual terminal commits) and only
+catches the **known** list — the judgment rule above is still yours to apply.
+
 ## Version Bump Checklist
 
 When bumping the version (e.g., `v0.2.2` → `v0.2.3`), update the following files **in order**:
@@ -153,8 +202,14 @@ When bumping the version (e.g., `v0.2.2` → `v0.2.3`), update the following fil
 8. `scripts/azuredevops-launcher.ps1` — `$Version = "vX.Y.Z"`
 9. `scripts/chpw-launcher.sh` — `VERSION="vX.Y.Z"`
 10. `scripts/chpw-launcher.ps1` — `$Version = "vX.Y.Z"`
-11. `README.md` — build/tag examples in the "從原始碼建置" section
-12. `CHANGELOG.md` — add new version entry at the top
+11. `scripts/slip-launcher.sh` — `VERSION="vX.Y.Z"`
+12. `scripts/slip-launcher.ps1` — `$Version = "vX.Y.Z"`
+13. `README.md` — build/tag examples in the "從原始碼建置" section
+14. `CHANGELOG.md` — add new version entry at the top
+
+> `scripts/bump-version.sh X.Y.Z` performs items 1-12 (the 4 CLI launchers + slip,
+> each `.sh` + `.ps1`), 13, and 14 automatically — run it instead of editing by
+> hand, then review the diff and `scripts/verify-release.sh`.
 
 > Note: the legacy `scripts/timecard-launcher.{sh,ps1}` were removed when the timecard skill was retired — no version bump applies.
 
@@ -168,9 +223,23 @@ git push origin vX.Y.Z
 
 ## Adding a New CLI
 
-`.github/workflows/release.yml` builds each CLI with a separate hardcoded `Build <name>-cli` step (it is NOT auto-discovery). When adding a new CLI, you MUST add a matching build step, or the release will silently ship without that CLI's binaries and its launcher will fail to download them. Mirror the existing steps:
+`.github/workflows/release.yml` and `scripts/build.sh` build the CLIs from a
+hardcoded `CLIS` list (it is NOT auto-discovery); `scripts/verify-release.sh`
+enforces that the two lists stay in sync. When adding a new CLI, add its dir to the
+`CLIS` list in BOTH files, or the release will silently ship without that CLI's
+binaries and its launcher will fail to download them. Mirror the existing entries:
 
 - ldflags inject `${MODULE}/cmd.Version`, `.Commit`, `.BuildDate` (module read from the CLI's `go.mod`)
 - output name `<name>-cli_${GOOS}_${GOARCH}` (append `.exe` for windows) — must match the launcher's download URL
 
-Also add the new CLI's launcher (`.sh` + `.ps1`) to the Version Bump Checklist above.
+Also add the new CLI's launcher (`.sh` + `.ps1`) to the Version Bump Checklist
+above, to `scripts/bump-version.sh`, and to the launcher/coverage loops in
+`scripts/verify-release.sh`.
+
+**Exception — `slip`:** it is not a `*-cli` module, so it is NOT in the `CLIS`
+list. It has its own build lines (version symbol `main.version`, output
+`slip_<os>_<arch>[.exe]`, dir `slip`) in both `release.yml` and `build.sh`. It IS
+cross-platform (built for windows too) and ships both `.sh` + `.ps1` launchers, so
+it rides the standard launcher loops in `verify-release.sh` / `bump-version.sh`;
+only its build-coverage check in `verify-release.sh` is dedicated (dir is `slip`,
+not `slip-cli`). A new `*-cli` should follow the loop pattern, not slip's build lines.
