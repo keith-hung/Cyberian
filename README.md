@@ -187,7 +187,7 @@ claude plugin install read-email@cyberian-marketplace
 | nouveau-timecard | Go CLI（HTTP + HTML 解析）                                     | 首次觸發自 GitHub Releases 自動下載，快取於 `scripts/.cache/` |
 | wedaka           | Go CLI（REST API）                                             | 首次觸發自 GitHub Releases 自動下載       |
 | azuredevops      | Go CLI（REST API）                                             | 首次觸發自 GitHub Releases 自動下載       |
-| change-password  | Path A: PowerShell（ADSI，本機無 OTP）；Path B: Go CLI（chpw-cli，two-step login/submit with SMS OTP） | Path A 隨 skill 附帶，無需下載；Path B 首次觸發自 GitHub Releases 自動下載 |
+| change-password  | Path A: PowerShell（ADSI，本機免 OTP，僅 Windows）；Path B: Go CLI（chpw-cli，互動 `-i` 或兩段式，App/SMS OTP，Windows/Mac 皆可） | Path A 隨 skill 附帶，無需下載；Path B 首次觸發自 GitHub Releases 自動下載 |
 | jira             | 第三方 [jira-cli](https://github.com/ankitpokhrel/jira-cli)   | launcher 自動下載並依 `JIRA_*` 初始化設定 |
 | outlook-calendar | 直接讀取 ICS 訂閱（`OUTLOOK_ICS_URLS`）                        | 無 binary，由 skill 邏輯處理              |
 | read-email       | 獨立 plugin，Python 解析器                                     | 透過 uv 執行，需 Python 3.10+             |
@@ -202,7 +202,7 @@ claude plugin install read-email@cyberian-marketplace
 ├── nouveau-timecard-cli/ Go CLI — 工時系統工時填報（草稿）
 ├── wedaka-cli/           Go CLI — 打卡出勤
 ├── azuredevops-cli/      Go CLI — Azure DevOps PR 管理
-├── chpw-cli/             Go CLI — 密碼變更（自助服務入口，two-step login/submit with SMS OTP）
+├── chpw-cli/             Go CLI — 密碼變更（自助服務入口：互動 -i 或兩段式，App/SMS OTP）
 ├── .claude-plugin/       Claude Code plugin metadata
 │   ├── plugin.json           Plugin manifest
 │   └── marketplace.json      Marketplace manifest（含外部 read-email plugin）
@@ -287,13 +287,14 @@ REST API client，操作 Azure DevOps Server（on-premises, IIS Basic Auth）。
 
 ### chpw-cli — 變更 on-prem AD 密碼
 
-Go CLI，透過離線自助服務入口以兩步驟變更 on-prem AD 密碼：`login` 驗證目前密碼並觸發伺服器發送 SMS OTP，`submit` 在效期內送出新密碼與 OTP。session 檔案只保存 cookie 與表單 token，不含密碼。domain-joined 且可連線 DC 的情境改走 PowerShell（ADSI）本機變更，詳見 `change-password` skill。
+Go CLI，透過離線自助服務入口變更 on-prem AD 密碼，單一旗標驅動（非子指令）。密碼一律經 `--pass-stdin` 或互動隱藏提示輸入，session 檔只保存 cookie 與表單 token、不含密碼。`--method` 選 OTP 遞送方式（`APP` = i-daka/Email，預設；`SMS` = 手機簡訊）。chpw 入口路徑 Windows 與 Mac 皆可用；domain-joined 且連得到 DC 的情境改走 PowerShell（ADSI）本機變更（僅 Windows、免 OTP），由 `change-password` skill 自動選路。
 
-| 指令      | 說明                                 |
-|-----------|--------------------------------------|
-| `login`   | 驗證目前密碼，觸發伺服器發送 SMS OTP |
-| `submit`  | 送出新密碼與 OTP（需在效期內完成）   |
-| `version` | 版本資訊                             |
+| 指令 / 旗標                  | 說明                                                                          |
+|------------------------------|-------------------------------------------------------------------------------|
+| `chpw -i`                    | 互動一鍵（人用）：提示 目前密碼 → OTP → 新密碼（預設兩次確認，`--no-confirm` 跳過） |
+| `chpw` + `--pass-stdin`      | 兩段式 step1（自動化）：驗證目前密碼、觸發 OTP、印出 `next` 指令               |
+| `chpw --continue --otp <碼>` | 兩段式 step2：以 `--pass-stdin` 送出新密碼與 OTP（需在效期內完成）            |
+| `version`                    | 版本資訊                                                                      |
 
 ### 共通設計
 
