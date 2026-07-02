@@ -25,20 +25,34 @@ type GlobalFlags struct {
 
 var gf GlobalFlags
 
+var (
+	fInteractive bool
+	fContinue    bool
+	fOtp         string
+	fMethod      string
+)
+
 var rootCmd = &cobra.Command{
 	Use:           "chpw",
-	Short:         "Change on-prem AD password via the self-service portal (two-step: login then submit)",
+	Short:         "Change your on-prem AD password via the self-service portal (interactive: -i; two-step: default then --continue)",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ExitError("usage: chpw <login|submit|version> [flags]. Use --help for details.", 1)
+		switch {
+		case fInteractive:
+			runInteractive()
+		case fContinue:
+			runContinue()
+		default:
+			runStart()
+		}
 		return nil
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if gf.PassStdin {
+		if gf.PassStdin && !fInteractive {
 			readPasswordFromStdin()
 		}
 	},
@@ -75,6 +89,11 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&gf.SessionFile, "session-file", ".chpw-session.json", "Session file path")
 	rootCmd.PersistentFlags().BoolVar(&gf.Insecure, "insecure", envBool("CHPW_INSECURE"), "Skip TLS verification (dev only)")
 	rootCmd.PersistentFlags().BoolVar(&gf.Pretty, "pretty", false, "Pretty-print JSON output")
+
+	rootCmd.Flags().BoolVarP(&fInteractive, "interactive", "i", false, "Interactive one-shot change (prompts; for humans)")
+	rootCmd.Flags().BoolVar(&fContinue, "continue", false, "Second step: submit new password + OTP (after a prior run)")
+	rootCmd.Flags().StringVar(&fOtp, "otp", "", "One-time password (use with --continue)")
+	rootCmd.Flags().StringVar(&fMethod, "method", "APP", "OTP delivery method: APP (i-daka/Email) or SMS")
 }
 
 func envOrDefault(key, fallback string) string {
