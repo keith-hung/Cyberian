@@ -20,3 +20,6 @@ scripts/.cache/
 
 # Development notes
 dev/
+
+# Superpowers working artifacts (specs, plans) — not tracked
+docs/superpowers/
