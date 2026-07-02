@@ -1,6 +1,6 @@
 ---
 name: change-password
-description: "Change your on-prem AD password. Trigger when user asks about: 改密碼, change password, AD password, 密碼過期, domain password. Two paths, auto-selected: domain-joined Windows (local, instant) or the off-network self-service portal (SMS OTP)."
+description: "Change your on-prem AD password. Trigger when user asks about: 改密碼, change password, AD password, 密碼過期, domain password. Two paths, auto-selected: domain-joined Windows (local, instant) or the off-network self-service portal (OTP via app/SMS)."
 user-invokable: true
 argument-hint: "[scenario, e.g. 'domain' or 'off-network']"
 ---
@@ -58,36 +58,46 @@ Optionally override the target with `-Domain <name> -User <name>` (e.g. to chang
 different domain account). Output: `{"success":true}` or `{"success":false,"error":"..."}`.
 Common failures: wrong old password, password-policy violation, or DC unreachable.
 
-## Path B — off-network self-service portal (SMS OTP)
+## Path B — off-network self-service portal (OTP)
 
-Two steps with a human OTP in the middle. Requires `CHPW_BASE_URL` (and usually
-`CHPW_USERNAME`) configured — see Prerequisites.
+The portal sends an OTP (via the i-daka app / email, or SMS) after you submit your
+current password. Two ways to run it, by who is at the keyboard. **Default to B1** so
+the password stays in the user's own terminal; use B2 only when the user explicitly
+opts into the agent handling the password.
 
-1. **login** — verifies the current password; the server texts a 6-digit OTP
-   (valid 120s) to the registered phone.
+### B1 — the user runs it (interactive, recommended)
 
-   ```bash
-   printf '%s\n' "$OLD_PASSWORD" | \
-     ${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh login --pass-stdin --user "<USERNAME>" --method APP
-   ```
+Give the user this command to run in THEIR OWN terminal (passwords are typed at hidden
+prompts and never enter this conversation). Fill in the real launcher path and username:
 
-   `--method` selects OTP delivery: `APP` (i-daka/Email, the portal default) or `SMS`
-   (mobile text). Defaults to `APP`.
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh -i --user <USERNAME> --method APP
+```
 
-2. Ask the user for the OTP they just received.
+It walks through: `Current password:` (hidden) → OTP sent → `Enter OTP:` →
+`New password:` / `Confirm new password:` (hidden) → `{"success":true,"message":"password changed"}`.
+`--method` selects delivery: `APP` (i-daka/Email, default) or `SMS`. `-i` requires a
+terminal; the user can omit `--user` and it will prompt.
 
-3. **submit** — sends the new password + OTP. Must complete within ~2 minutes.
+### B2 — agent-driven (two-step; only after the user opts in)
 
-   ```bash
-   printf '%s\n' "$NEW_PASSWORD" | \
-     ${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh submit --pass-stdin --otp "<OTP>"
-   ```
+Step 1 — sends the OTP and prints the next command:
+
+```bash
+printf '%s\n' "$OLD_PASSWORD" | \
+  ${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh --user "<USERNAME>" --method APP --pass-stdin
+```
+
+Then ask the user for the OTP they received. Step 2 — within ~120s, same directory:
+
+```bash
+printf '%s\n' "$NEW_PASSWORD" | \
+  ${CLAUDE_PLUGIN_ROOT}/scripts/chpw-launcher.sh --continue --pass-stdin --otp "<OTP>"
+```
 
 Output: `{"success":true,"message":"password changed"}` or a structured error
-(`validation:` for wrong OTP / weak password / expired session; `authentication:`
-for a wrong current password at the login step).
-
-Windows PowerShell uses `chpw-launcher.ps1` instead of `.sh`.
+(`validation:` for wrong OTP / weak password / expired session; `authentication:` for a
+wrong current password at step 1). Windows PowerShell uses `chpw-launcher.ps1` instead of `.sh`.
 
 ## Prerequisites (Path B)
 
@@ -118,3 +128,4 @@ cloud action is needed.
 - Passwords are passed only via stdin — never as flags, never echoed, never written to files.
 - The session file (`.chpw-session.json`) holds cookies + a form token only, never a password.
 - The portal URL and any AD details live in env/settings, never in tracked files.
+- The user enters passwords in their own terminal (Path A / Path B1); the agent only handles the password when the user explicitly chooses the two-step agent path (B2).

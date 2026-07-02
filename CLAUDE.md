@@ -103,12 +103,13 @@ Config via env vars: `AZDO_BASE_URL`, `AZDO_COLLECTION`, `AZDO_DOMAIN` (optional
 
 ### chpw-cli
 
-HTML form-based HTTP client for the off-network self-service AD password-change portal (antiforgery token + form POST, like nouveau-timecard-cli). Two-step flow with a human-supplied SMS OTP in the middle:
+HTML form-based HTTP client for the off-network self-service AD password-change portal (antiforgery token + form POST, like nouveau-timecard-cli). One flag-driven command instead of subcommands:
 
-1. `login` — POSTs to the site root with a required OTP-delivery method (`--method APP|SMS`, default `APP`; `APP` = i-daka/Email, `SMS` = mobile text) alongside the current password; the server then delivers a 6-digit OTP and the session (cookies + form token) is persisted to `.chpw-session.json`
-2. `submit` — sends the new password plus the OTP within its validity window to complete the change
+- one-shot interactive: `chpw -i` (prompts for current password, OTP, and new password — for a human at a terminal)
+- two-step for automation: `chpw` (step 1: posts current password via `--pass-stdin`, triggers the OTP, persists `.chpw-session.json`, prints a `next` command) then `chpw --continue --otp <code>` (step 2: submits the new password via `--pass-stdin`)
+- `--method APP|SMS` (default APP: i-daka/Email; SMS: mobile text)
 
-Commands: `login`, `submit`, `version`
+Commands: (default) start / -i interactive / --continue / version
 
 Config via env vars: `CHPW_BASE_URL`, `CHPW_USERNAME` (optional), `CHPW_INSECURE` (optional, skip TLS verification). Password is only ever supplied via `--pass-stdin`; the session file stores cookies and a form token, never a password.
 
