@@ -1,6 +1,6 @@
 ---
 name: change-password
-description: "Change your on-prem AD password. Trigger when user asks about: 改密碼, change password, AD password, 密碼過期, domain password. Two paths: domain-joined Windows (local, instant) and off-network self-service portal (SMS OTP)."
+description: "Change your on-prem AD password. Trigger when user asks about: 改密碼, change password, AD password, 密碼過期, domain password. Two paths, auto-selected: domain-joined Windows (local, instant) or the off-network self-service portal (SMS OTP)."
 user-invokable: true
 argument-hint: "[scenario, e.g. 'domain' or 'off-network']"
 ---
@@ -16,28 +16,45 @@ MUST be changed against on-prem AD — never a cloud page.
 Activate when the user wants to change (not "forgot"/reset) their AD password:
 改密碼 / change password / AD 密碼 / 密碼過期 / domain password.
 
-## Choose the path
+## Routing (automatic)
 
-Ask the user (or detect) which situation applies:
+Choose the path automatically from a detection probe; do not ask the user unless
+they explicitly request a specific path.
 
-| Situation | Path |
-|-----------|------|
-| Domain-joined Windows, can reach a DC (intranet or VPN) | **Path A — local** |
-| Off-network, non-domain Windows (no VPN) | **Path B — portal** |
+**Step 1 — detect** (run via `powershell.exe`; on WSL wrap the script path with `wslpath -w`):
+
+```bash
+powershell.exe -NoProfile -File "$(wslpath -w "${CLAUDE_PLUGIN_ROOT}/skills/change-password/local-change.ps1")" -Detect
+```
+
+Prints JSON, e.g. `{"domainJoined":true,"userIsDomain":true,"dcReachable":true,"domain":"...","user":"...","adViable":true}`.
+If `powershell.exe` is missing or errors (e.g. macOS), treat it as `adViable=false`.
+
+**Step 2 — route on `adViable`:**
+
+| Result | Path |
+|--------|------|
+| `adViable == true` (domain-joined + domain account + DC reachable) | **Path A — local AD** |
+| otherwise (non-domain / DC unreachable / no PowerShell) | **Path B — chpw portal** |
+
+For Path B, if `CHPW_BASE_URL` is not set, stop and tell the user neither path is
+available and what to configure. The user may override the automatic choice by
+asking for a specific path.
 
 ## Path A — domain-joined (local, no OTP)
 
 Run the PowerShell script; pipe old then new password (two lines) to stdin.
+Domain and user are auto-detected from the logged-in session — no flags needed.
 Never put passwords on the command line.
 
 ```bash
 printf '%s\n%s\n' "$OLD" "$NEW" | powershell.exe -NoProfile -File \
-  "$(wslpath -w "${CLAUDE_PLUGIN_ROOT}/skills/change-password/local-change.ps1")" \
-  -Domain "<AD_DOMAIN>" -User "<USERNAME>"
+  "$(wslpath -w "${CLAUDE_PLUGIN_ROOT}/skills/change-password/local-change.ps1")"
 ```
 
-Output: `{"success":true}` or `{"success":false,"error":"..."}`. Common failures:
-wrong old password, password-policy violation, or DC unreachable.
+Optionally override the target with `-Domain <name> -User <name>` (e.g. to change a
+different domain account). Output: `{"success":true}` or `{"success":false,"error":"..."}`.
+Common failures: wrong old password, password-policy violation, or DC unreachable.
 
 ## Path B — off-network self-service portal (SMS OTP)
 

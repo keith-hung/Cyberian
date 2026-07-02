@@ -9,6 +9,7 @@
 - Add `change-password` skill: change on-prem AD password from domain-joined
   Windows (PowerShell ADSI) or the off-network self-service portal (`chpw-cli`,
   two-step login/submit with SMS OTP).
+  - Auto-detect domain-join + DC reachability and route to local ADSI change or the chpw portal automatically.
 
 ## [0.2.7] - 2026-06-02
 

@@ -112,7 +112,7 @@ Commands: `login`, `submit`, `version`
 
 Config via env vars: `CHPW_BASE_URL`, `CHPW_USERNAME` (optional), `CHPW_INSECURE` (optional, skip TLS verification). Password is only ever supplied via `--pass-stdin`; the session file stores cookies and a form token, never a password.
 
-The `change-password` skill also covers a second, CLI-free path: domain-joined Windows machines that can reach a DC use `skills/change-password/local-change.ps1` (PowerShell ADSI) for an instant local change with no OTP.
+The `change-password` skill also covers a second, CLI-free path: it runs `skills/change-password/local-change.ps1 -Detect` first and, when the machine is domain-joined with a reachable DC, uses the local ADSI change (domain/user auto-detected from the session, overridable via `-Domain`/`-User`); otherwise it falls back to the chpw portal automatically.
 
 ### Shared CLI patterns
 
