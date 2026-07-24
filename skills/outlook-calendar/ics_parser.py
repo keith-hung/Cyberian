@@ -81,6 +81,23 @@ def parse_ics_datetime(dt_line: str) -> Optional[datetime]:
         return None
 
 
+def is_all_day_line(dt_line: str) -> bool:
+    """
+    Report whether a DTSTART/DTEND line describes an all-day (date-only) value.
+
+    All-day values are marked either by the VALUE=DATE parameter
+    (DTSTART;VALUE=DATE:20260728) or by a date-only value with no time part.
+    """
+    if not dt_line:
+        return False
+    if 'VALUE=DATE' in dt_line.upper():
+        return True
+    match = re.search(r'(\d{8}T?\d{0,6}Z?)', dt_line)
+    if match:
+        return 'T' not in match.group(1)
+    return False
+
+
 def parse_vevent(vevent_text: str) -> Optional[dict]:
     """Parse a single VEVENT block into a dictionary."""
     lines = vevent_text.strip().split('\n')
@@ -102,6 +119,7 @@ def parse_vevent(vevent_text: str) -> Optional[dict]:
         elif line.startswith('DTSTART'):
             event['dtstart_raw'] = line
             event['dtstart'] = parse_ics_datetime(line)
+            event['all_day'] = is_all_day_line(line)
         elif line.startswith('DTEND'):
             event['dtend_raw'] = line
             event['dtend'] = parse_ics_datetime(line)
@@ -262,6 +280,36 @@ def extract_calendar_name(ics_content: str) -> str:
     return ''
 
 
+def expand_all_day(event: dict, range_start: datetime, range_end: datetime) -> list:
+    """
+    Expand an all-day event into one occurrence per day it covers.
+
+    Per RFC 5545, an all-day event's DTEND is exclusive: DTSTART=20260728,
+    DTEND=20260801 covers 7/28..7/31 (up to, but not including, DTEND). A
+    single-day all-day event (DTEND = DTSTART + 1 day) yields exactly one row,
+    matching the previous behaviour.
+    """
+    start_date = event['dtstart'].date()
+    end_date = event['dtend'].date()  # exclusive
+    # Guard malformed feeds where DTEND <= DTSTART: treat as a single day so the
+    # event still shows one row instead of vanishing.
+    if end_date <= start_date:
+        end_date = start_date + timedelta(days=1)
+
+    occurrences = []
+    day = start_date
+    while day < end_date:
+        day_dt = datetime(day.year, day.month, day.day)
+        if range_start <= day_dt <= range_end:
+            occurrence = event.copy()
+            occurrence['dtstart'] = day_dt
+            occurrence['dtend'] = day_dt + timedelta(days=1)
+            occurrence['is_recurring'] = False
+            occurrences.append(occurrence)
+        day += timedelta(days=1)
+    return occurrences
+
+
 def parse_ics(ics_content: str, range_start: datetime, range_end: datetime,
               calendar_name: str = '') -> list:
     """Parse ICS content and return events within the date range."""
@@ -282,6 +330,10 @@ def parse_ics(ics_content: str, range_start: datetime, range_end: datetime,
             # Recurring event: expand within range
             occurrences = expand_rrule(event, range_start, range_end)
             all_events.extend(occurrences)
+        elif event.get('all_day') and event.get('dtend'):
+            # All-day event with an (exclusive) DTEND: expand to one row per
+            # covered day. Single-day all-day events yield exactly one row.
+            all_events.extend(expand_all_day(event, range_start, range_end))
         else:
             # Single event: check if within range
             event['is_recurring'] = False
