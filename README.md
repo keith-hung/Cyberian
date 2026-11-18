@@ -130,7 +130,7 @@ cp .claude/settings.json.example .claude/settings.local.json
 | **Nouveau Timecard** 新版工時 | `TIMECARD_BASE_URL`、`TIMECARD_USERNAME`、`TIMECARD_PASSWORD`、選用 `TIMECARD_INSECURE`                                                            |
 | **WeDaka** 打卡               | `WEDAKA_API_URL`、`WEDAKA_USERNAME`、`WEDAKA_EMP_NO`、`WEDAKA_DEVICE_ID`                                                                           |
 | **JIRA**                      | `JIRA_SERVER_URL`、`JIRA_USER_EMAIL`、`JIRA_API_TOKEN`、`JIRA_PROJECT`、`JIRA_BOARD`                                                               |
-| **Outlook 行事曆**            | `OUTLOOK_ICS_URLS`                                                                                                                                 |
+| **Outlook 行事曆**            | 選用 `OUTLOOK_CALENDAR_DIR`（預設自動找 OneDrive `Calendar-Export/`）；舊版 ICS 訂閱用 `OUTLOOK_ICS_URLS`                                         |
 | **Azure DevOps**              | `AZDO_BASE_URL`、`AZDO_COLLECTION`、`AZDO_DOMAIN`、`AZDO_USERNAME`、`AZDO_PASSWORD`、`AZDO_PROJECT`*、`AZDO_REPO`*、`AZDO_API_VERSION`*、`AZDO_INSECURE`* |
 | **Change Password** 密碼變更  | `CHPW_BASE_URL`、`CHPW_USERNAME`、選用 `CHPW_INSECURE`（僅離線自助服務入口路徑需要；本機 AD 變更免設定）                                          |
 
@@ -189,7 +189,7 @@ claude plugin install read-email@cyberian-marketplace
 | azuredevops      | Go CLI（REST API）                                             | 首次觸發自 GitHub Releases 自動下載       |
 | change-password  | Path A: PowerShell（ADSI，本機免 OTP，僅 Windows）；Path B: Go CLI（chpw-cli，互動 `-i` 或兩段式，App/SMS OTP，Windows/Mac 皆可） | Path A 隨 skill 附帶，無需下載；Path B 首次觸發自 GitHub Releases 自動下載 |
 | jira             | 第三方 [jira-cli](https://github.com/ankitpokhrel/jira-cli)   | launcher 自動下載並依 `JIRA_*` 初始化設定 |
-| outlook-calendar | 直接讀取 ICS 訂閱（`OUTLOOK_ICS_URLS`）                        | 無 binary，由 skill 邏輯處理              |
+| outlook-calendar | 讀取 Power Automate 匯出到 OneDrive 的行事曆 JSON（Python，stdlib） | 無 binary；流程套件隨 skill 附帶（`flow/`） |
 | read-email       | 獨立 plugin，Python 解析器                                     | 透過 uv 執行，需 Python 3.10+             |
 
 </details>
@@ -207,7 +207,7 @@ claude plugin install read-email@cyberian-marketplace
 │   ├── plugin.json           Plugin manifest
 │   └── marketplace.json      Marketplace manifest（含外部 read-email plugin）
 ├── skills/               Skill 定義（每個 skill 一份 SKILL.md）
-│                         jira 走 jira-cli、outlook-calendar 讀 ICS，皆無自帶 Go CLI
+│                         jira 走 jira-cli、outlook-calendar 讀 OneDrive 行事曆匯出，皆無自帶 Go CLI
 ├── scripts/              Launcher scripts + 建置腳本
 │   ├── build.sh              跨平台 cross-compile
 │   └── *-launcher.sh/.ps1    自動下載 CLI binary
