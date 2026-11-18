@@ -75,6 +75,25 @@ def fail_if(name, expr, msg, after):
             "actions": {f"Stop_{name}": terminate(msg)}, "else": {"actions": {}}}
 
 
+STARTER = '{"events":[]}'
+
+
+def ensure_file(prefix, path, after):
+    """Probe the file; create it (and its folder) only when OneDrive answers 404, then read its metadata."""
+    folder, name = path.rsplit("/", 1)
+    return {
+        f"{prefix}Probe": api(OD, "GetFileMetadataByPath", {"path": path}, after),
+        f"{prefix}Ensure": {
+            "runAfter": {f"{prefix}Probe": ["Succeeded", "Failed"]}, "type": "If",
+            "expression": {"and": [{"equals": [f"@outputs('{prefix}Probe')?['statusCode']", 404]}]},
+            "actions": {f"Create{prefix}File": api(OD, "CreateFile",
+                                                   {"folderPath": folder, "name": name, "body": STARTER})},
+            "else": {"actions": {}},
+        },
+        f"{prefix}Meta": api(OD, "GetFileMetadataByPath", {"path": path}, ok(f"{prefix}Ensure")),
+    }
+
+
 def day(offset):
     return f"concat(convertFromUtc(addDays(utcNow(),{offset}),'{TZ}','yyyy-MM-dd'),'T00:00:00+08:00')"
 
@@ -136,7 +155,7 @@ snapshot = {
     "NormalizeSnap": select("@body('GetSnap')?['value']", FULL_MAP, ok("SnapOverflow"), secure=True),
     **bad_tz_guard("@body('NormalizeSnap')", "Snap", ok("NormalizeSnap")),
     "BuildSnap": compose(file_body("body('NormalizeSnap')", "SnapStart", "SnapEnd", "snapshot"), ok("SnapTzGuard"), secure=True),
-    "SnapMeta": api(OD, "GetFileMetadataByPath", {"path": SNAP_PATH}, ok("BuildSnap")),
+    **ensure_file("Snap", SNAP_PATH, ok("BuildSnap")),
     "WriteSnap": api(OD, "UpdateFile", {"id": "@body('SnapMeta')?['Id']", "body": "@outputs('BuildSnap')"},
                      ok("SnapMeta"), SECURE_IN),
 }
@@ -187,7 +206,7 @@ history_branch = {
 }
 
 history = {
-    "HistMeta": api(OD, "GetFileMetadataByPath", {"path": HIST_PATH}, ok("WriteSnap")),
+    **ensure_file("Hist", HIST_PATH, ok("WriteSnap")),
     "HistoryDue": {
         "runAfter": ok("HistMeta"), "type": "If",
         "expression": {"or": [

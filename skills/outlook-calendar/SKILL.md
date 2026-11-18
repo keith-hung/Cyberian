@@ -86,10 +86,9 @@ Warnings (stale data, dates outside the exported range) are printed to stderr, a
 
 ## Setup (once per user)
 
-1. In OneDrive root create folder `Calendar-Export` with two files, `calendar.json` and `calendar-history.json`, each containing `{"events":[]}`.
-2. Power Automate → **My flows** → **Import** → **Import Package (Legacy)** → upload `flow/calendar-export-flow.zip` from this skill.
-3. Under Related resources pick (or create) the **Office 365 Outlook** and **OneDrive for Business** connections → **Import**.
-4. Open the flow → **Save** → **Test** → **Manually**. Both files grow after the run; then it runs every 30 minutes.
+1. Power Automate → **My flows** → **Import** → **Import Package (Legacy)** → upload `flow/calendar-export-flow.zip` from this skill.
+2. Under Related resources pick (or create) the **Office 365 Outlook** and **OneDrive for Business** connections → **Import**.
+3. Open the flow → **Save** → **Test** → **Manually**. The flow creates `Calendar-Export/` with both files in OneDrive root if they do not exist (only on a 404, so existing files are never replaced), then fills them; after that it runs every 30 minutes.
 
 `flow/make_package.py` regenerates the package if the flow definition changes.
 
@@ -105,7 +104,7 @@ Warnings (stale data, dates outside the exported range) are printed to stderr, a
 | `cannot read ...` | OneDrive online-only placeholder → ask the user to open the file once in Finder / File Explorer |
 | `snapshot is stale` | The flow stopped (failed runs, expired connection, DLP) → ask the user to check run history in Power Automate |
 | `dates ... are not covered by the export` | Range is beyond +30 days or older than one year; say so instead of claiming the user is free |
-| Flow fails with `404 File or folder not found` | Setup step 1 files missing or not in OneDrive root |
+| Flow fails at `CreateSnapFile` / `CreateHistFile` | The flow could not create `Calendar-Export/` itself → create the folder with two files containing `{"events":[]}` in OneDrive root and run again |
 | Flow fails with `Prefer outlook.timezone header not applied` | Time zone header ignored; the flow stops rather than write wrong times |
 | Flow fails with `History file is not empty but parsed 0 events` | `calendar-history.json` was edited or corrupted; the flow stops rather than overwrite history |
 
