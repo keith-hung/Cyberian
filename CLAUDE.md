@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plugin that exposes them as skills. It contains five Go CLI applications and a Claude Code plugin with six skills.
+Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plugin that exposes them as skills. It contains five Go CLI applications and a Claude Code plugin with eight skills.
 
 > **Retired:** The legacy `timecard` skill was removed from the plugin (it kept mis-triggering against the rebuilt system). Its `timecard-cli/` Go source, launchers history, and build instructions are retained for reference, but it is NOT exposed as a skill, NOT built by `release.yml`/`build.sh`, and has no launcher script. For timesheet work, always use `nouveau-timecard`. Do not re-add a `skills/timecard/` directory.
 
@@ -22,7 +22,7 @@ Cyberian is a monorepo of workplace productivity CLI tools and a Claude Code plu
 ├── .claude-plugin/   Claude Code plugin metadata
 │   ├── plugin.json       Plugin manifest
 │   └── marketplace.json  Marketplace manifest
-├── skills/           Skill definitions (SKILL.md per skill: nouveau-timecard, wedaka, jira, outlook-calendar, azuredevops, change-password)
+├── skills/           Skill definitions (SKILL.md per skill: nouveau-timecard, wedaka, jira, outlook-calendar, azuredevops, change-password, flashback, clouddrive-fetch)
 ├── scripts/          Launcher scripts (.sh + .ps1) + build script
 └── dev/              Development notes (gitignored)
 ```
@@ -124,7 +124,7 @@ All CLIs follow the same conventions:
 
 ### Claude Code Plugin
 
-The plugin (`plugin.json`) registers six skills that Claude Code activates based on keyword triggers. Each skill's SKILL.md contains the full usage instructions, commands, and examples.
+The plugin (`plugin.json`) registers eight skills that Claude Code activates based on keyword triggers. Each skill's SKILL.md contains the full usage instructions, commands, and examples.
 
 Launcher scripts in `scripts/` auto-download platform-appropriate binaries from GitHub Releases on first run, caching them in `.cache/`. The jira launcher also auto-initializes `jira-cli` config from env vars.
 

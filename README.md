@@ -39,6 +39,7 @@ Claude 會自動挑選對應的 skill，背後透過各服務的 CLI 或 API 完
 | **azuredevops**      | Azure DevOps 操作     | PR、pull request、code review、my PRs、Azure DevOps、PR image attachments |
 | **change-password**  | 變更 on-prem AD 密碼（自動選路徑） | 改密碼、change password、AD 密碼、密碼過期、domain password             |
 | **flashback**        | 從本機逐字稿估算專案工時 | 工時回推、time attribution、worklog、花多少時間、how long did I spend  |
+| **clouddrive-fetch** | 下載雲端硬碟「只在線上」的檔案 | 佔位檔、online-only、Resource deadlock avoided、OneDrive 檔案讀不到 |
 | **read-email** \*    | 解析 .eml / .msg 郵件 | 讀郵件、parse .eml、開啟 .msg、取出附件、信件內容                      |
 
 > \* **read-email** 是本 marketplace 內的**獨立 plugin**（原始碼於 [keith-hung/claude-read-email](https://github.com/keith-hung/claude-read-email)），需另外安裝且有不同的執行需求 — 詳見下方「安裝與設定」中的「額外安裝：read-email」。
@@ -190,6 +191,7 @@ claude plugin install read-email@cyberian-marketplace
 | change-password  | Path A: PowerShell（ADSI，本機免 OTP，僅 Windows）；Path B: Go CLI（chpw-cli，互動 `-i` 或兩段式，App/SMS OTP，Windows/Mac 皆可） | Path A 隨 skill 附帶，無需下載；Path B 首次觸發自 GitHub Releases 自動下載 |
 | jira             | 第三方 [jira-cli](https://github.com/ankitpokhrel/jira-cli)   | launcher 自動下載並依 `JIRA_*` 初始化設定 |
 | outlook-calendar | 直接讀取 ICS 訂閱（`OUTLOOK_ICS_URLS`）                        | 無 binary，由 skill 邏輯處理              |
+| clouddrive-fetch | Python（stdlib，ctypes），macOS/Windows/WSL/Linux | 無 binary，隨 skill 附帶 |
 | read-email       | 獨立 plugin，Python 解析器                                     | 透過 uv 執行，需 Python 3.10+             |
 
 </details>
