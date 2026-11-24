@@ -223,7 +223,8 @@ def main() -> int:
     folder = find_dir(args.dir)
     if not folder:
         return error("Calendar-Export/calendar.json not found. Set OUTLOOK_CALENDAR_DIR or check that the "
-                     "Power Automate calendar export flow is running and OneDrive is synced. "
+                     "Power Automate calendar export flow is running and OneDrive is synced "
+                     "(or use the ICS source: OUTLOOK_ICS_URLS). "
                      f"Searched: {candidate_dirs() if not args.dir else [args.dir]}", 2)
 
     snap = load(os.path.join(folder, SNAPSHOT))
