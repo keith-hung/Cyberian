@@ -128,7 +128,7 @@ The plugin (`plugin.json`) registers six skills that Claude Code activates based
 
 Launcher scripts in `scripts/` auto-download platform-appropriate binaries from GitHub Releases on first run, caching them in `.cache/`. The jira launcher also auto-initializes `jira-cli` config from env vars.
 
-All 25 env vars across 6 skills can be centrally configured in `.claude/settings.local.json` (copy from `settings.json.example`). Shell profile exports also work and take precedence over settings.json values.
+All 27 env vars across 6 skills can be centrally configured in `.claude/settings.local.json` (copy from `settings.json.example`). Shell profile exports also work and take precedence over settings.json values.
 
 ## Key Conventions
 

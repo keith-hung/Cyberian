@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### 變更
+
+- `outlook-calendar` skill 新增 OneDrive 匯出來源，與原本的 ICS 訂閱二選一（給無法發布 ICS 的組織使用）：Power Automate 流程把行事曆匯出成 `calendar.json`（前 7 天到後 30 天，含內文摘要，與會者，會議連結，每 30 分鐘更新）加 `calendar-history.json`（過去一年，約每天合併）。新增 stdlib-only 的 `calendar_reader.py`（`--details`，`--include-cancelled`，`--status`，資料過期與範圍外警告），可匯入的流程套件與產生器放在 `skills/outlook-calendar/flow/`。資料夾自動偵測，可用 `OUTLOOK_CALENDAR_DIR` 覆寫。新增 `OUTLOOK_CALENDAR_SOURCE`（`ics`，`export`，`auto`）選擇來源，`auto` 時有匯出資料夾就用匯出，否則用 `OUTLOOK_ICS_URLS`。ICS 完整說明移到 `skills/outlook-calendar/ics.md`；ICS 表格的週期性標記由 emoji 改為 `(recurring)`。
+
 ## [0.3.1] - 2026-07-02
 
 ### 變更

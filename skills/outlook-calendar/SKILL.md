@@ -1,198 +1,155 @@
 ---
 name: outlook-calendar
-description: "Read Outlook calendar events via ICS subscription. Use when user asks about meetings, schedule, calendar, appointments, or availability."
+description: "Read Outlook (Microsoft 365) calendar events from either a published ICS subscription or the OneDrive Calendar-Export files written by a Power Automate flow. Use when user asks about meetings, schedule, calendar, appointments, availability, who is attending a meeting, or a meeting's Teams link."
 ---
 
 # Outlook Calendar Reader
 
 ## Overview
 
-This skill reads calendar events from Outlook via ICS subscription URLs. Supports multiple calendars.
+Two calendar sources are supported; each user sets up whichever their organization allows:
+
+| Source | Use when | Script | Attendees, body preview, meeting link |
+|--------|----------|--------|---------------------------------------|
+| **ICS subscription** | The organization allows publishing the calendar from Outlook | `ics_parser.py` | Usually not included |
+| **OneDrive export** | Publishing is blocked; a Power Automate flow exports the calendar to OneDrive | `calendar_reader.py` | Yes (`--details`) |
 
 ## When to Use
 
-- User asks about today's meetings or schedule
-- User asks about upcoming events
-- User wants to check availability
-- User asks "What's on my calendar?"
+- "What meetings do I have today / this week / on 12/5?"
+- "Am I free tomorrow afternoon?"
+- "Who is attending the review meeting?" / "Send me the Teams link for ..." (export only)
+- "What meetings did I have last month?"
 
-## Prerequisites
+## Choosing the Source
 
-The environment variable `OUTLOOK_ICS_URLS` must be set to one or more ICS subscription URLs (comma-separated).
+Always run `date` first to resolve "today", "tomorrow" or weekday names into dates.
 
-**Option A — Centralized config (recommended):**
-Copy `.claude/settings.json.example` to `.claude/settings.local.json` and fill in the `OUTLOOK_ICS_URLS` value.
+1. `OUTLOOK_CALENDAR_SOURCE=ics` → ICS. `OUTLOOK_CALENDAR_SOURCE=export` → export.
+2. Unset or `auto`: run `calendar_reader.py --status`. If it finds `Calendar-Export`, use the export (richer fields). Otherwise, if `OUTLOOK_ICS_URLS` is set, use ICS.
+3. Neither configured → tell the user there are two setup options (see Setup) and ask which one their organization allows.
 
-**Option B — Shell profile:**
-Export the variable in `~/.zshrc` or `~/.bashrc`:
-```bash
-# Single calendar
-export OUTLOOK_ICS_URLS="https://outlook.office365.com/owa/calendar/.../reachcalendar.ics"
+When the ICS source is in use and the user asks for attendees, responses or the meeting link, say the ICS feed does not provide them; do not guess.
 
-# Multiple calendars (comma-separated)
-export OUTLOOK_ICS_URLS="https://outlook.office365.com/.../cal1.ics,https://outlook.office365.com/.../cal2.ics"
-```
+## Source A: ICS Subscription
 
-Calendar names are automatically extracted from each ICS feed's `X-WR-CALNAME` property.
-
-## Execution Steps
-
-### Method 1: Use ics_parser.py (Recommended)
-
-The skill includes `ics_parser.py` that handles all parsing and RRULE expansion.
-
-**Prerequisite**: [uv](https://docs.astral.sh/uv/) must be installed.
+`ics_parser.py` fetches the published ICS feeds in `OUTLOOK_ICS_URLS` (comma-separated, one per calendar) on every query. Full reference (RRULE handling, manual parsing, debugging): [ics.md](ics.md).
 
 ```bash
-# Get today's date
-TODAY=$(date +%Y-%m-%d)
+I=${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py
 
-# Parse events for today (all calendars)
-uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --start "$TODAY" \
-  --end "$TODAY"
-
-# Parse events for a date range
-uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --start 2025-12-01 \
-  --end 2025-12-31
-
-# Filter by calendar name (substring match)
-uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --start "$TODAY" \
-  --end "$TODAY" \
-  --calendar "Work"
-
-# Specify URLs directly (ignores env var)
-uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --url "https://...cal1.ics" \
-  --url "https://...cal2.ics" \
-  --start "$TODAY" \
-  --end "$TODAY"
-
-# Output as JSON
-uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --start 2025-12-01 \
-  --end 2025-12-31 \
-  --format json
-
-# Debug mode (shows event counts per calendar)
-uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --start 2025-12-01 \
-  --end 2025-12-31 \
-  --debug
+uv run $I --start 2026-11-18 --end 2026-11-18
+uv run $I --start 2026-11-16 --end 2026-11-22 --calendar "Work"   # filter by calendar name
+uv run $I --start 2026-11-16 --end 2026-11-22 --format json
 ```
 
-### Method 2: Manual Parsing with WebFetch
+| Option | Meaning |
+|--------|---------|
+| `--start`, `--end` | Date range, inclusive (both required) |
+| `--url URL` | ICS URL; repeatable; overrides `OUTLOOK_ICS_URLS` |
+| `--calendar NAME` | Only calendars whose name contains NAME |
+| `--format table\|json` | Markdown table (default) or JSON |
+| `--debug` | Show event counts per calendar |
 
-If the script is not available, use WebFetch and parse manually:
+## Source B: OneDrive Export
 
-1. **Fetch ICS**: Use WebFetch to retrieve each ICS URL
-2. **Parse Events**: Extract VEVENT blocks
-3. **Handle RRULE**: Expand recurring events (see RRULE Reference below)
-4. **Filter & Format**: Filter by date range and output as table
+A Power Automate flow (run under the user's own account) exports the calendar to the user's OneDrive every 30 minutes. `calendar_reader.py` reads those files locally:
 
-## Script Features
+| File | Range | Fields | Updated |
+|------|-------|--------|---------|
+| `Calendar-Export/calendar.json` | 7 days ago → 30 days ahead | full: subject, time, location, organizer, show-as, body preview, attendees with responses, meeting link | every 30 min, fully rewritten |
+| `Calendar-Export/calendar-history.json` | past year | slim: subject, time, location, organizer, show-as, status | about once a day, merged; deleted meetings kept as `deleted` |
 
-The `ics_parser.py` script handles:
+`calendar_reader.py` is stdlib-only; run it with `uv run` or `python3`.
 
-- Multiple calendars with auto-detected names (X-WR-CALNAME)
-- `--calendar` filter for viewing specific calendars
-- All 3 DTSTART formats (UTC, TZID, all-day)
-- RRULE expansion (WEEKLY, DAILY with BYDAY, INTERVAL, UNTIL, COUNT)
-- Automatic timezone conversion (UTC → Taipei UTC+8)
-- Dependencies auto-installed by uv
-- Table or JSON output format
-- Calendar column shown automatically when multiple calendars are present
-- Debug mode for troubleshooting
+```bash
+R=${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/calendar_reader.py
+
+# Today (default range is today only)
+uv run $R
+
+# Date range (YYYY-MM-DD, inclusive)
+uv run $R --start 2026-11-16 --end 2026-11-22
+
+# Attendees, body preview and meeting link (snapshot window only)
+uv run $R --start 2026-11-18 --details --format json
+
+# Include cancelled meetings
+uv run $R --start 2026-11-18 --end 2026-11-30 --include-cancelled
+
+# Check file location and freshness
+uv run $R --status
+```
+
+| Option | Meaning |
+|--------|---------|
+| `--start`, `--end` | Date range, inclusive; default today |
+| `--format table\|json` | Markdown table (default) or JSON |
+| `--details` | Add `preview`, `attendees` (name, email, type, response) and `meetingUrl` — snapshot window only |
+| `--include-cancelled` | Also list cancelled meetings (adds a Status column) |
+| `--dir PATH` | Calendar-Export folder; overrides auto-detection |
+| `--status` | Print folder, `generatedAt`, windows, counts and staleness only |
+
+How the two files are combined:
+
+- Inside the snapshot window, only `calendar.json` is used (it is current; history may lag up to a day).
+- Before the snapshot window, `calendar-history.json` fills in.
+- Only `active` meetings are listed by default; `deleted` (history only) is never listed.
+- Multi-day all-day events are expanded into one row per day.
+- All times are Taipei time (`+08:00`).
+
+Warnings (stale data, dates outside the exported range) are printed to stderr, appended under the table, and included in JSON `warnings`. Relay them to the user.
+
+`calendar.json` contains body previews, attendee emails and meeting join links. Use them only to answer the user locally; do not paste them into chat channels, web pages or other public places, and do not modify either file.
 
 ## Output Format
 
-The script outputs a markdown table. When multiple calendars are present, a Calendar column is included:
-
-| Date | Time | Event | Location | Calendar |
-|------|------|-------|----------|----------|
-| 2025-12-02 (Tue) | 10:30-11:00 | 🔄 Standup Meeting | Microsoft Teams | Work |
-| 2025-12-02 (Tue) | 14:00-15:00 | 🔄 Weekly Meeting | Conference Room | Work |
-| 2025-12-03 (Wed) | 12:00-13:00 | Lunch | — | Personal |
-
-- 🔄 indicates a recurring event
-
-## RRULE Reference
-
-### Identify Recurring Events
-
-A VEVENT with `RRULE` is a recurring event:
+Both scripts print a Markdown table, for example:
 
 ```
-BEGIN:VEVENT
-DTSTART;TZID=Taipei Standard Time:20250424T103000
-RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,TU,WE,TH,FR
-SUMMARY:Standup Meeting
-END:VEVENT
+| Date | Time | Event | Location | Show As |
+|---|---|---|---|---|
+| 2026-11-18 (Wed) | 10:30-11:00 | Team Standup (recurring) | Microsoft Teams Meeting | busy |
+| 2026-11-20 (Fri) | All day | Company Holiday | — | free |
 ```
 
-### Common RRULE Parameters
+The ICS table has no Show As column (it adds a Calendar column when several calendars are configured), so treat every listed ICS event as occupied. On the export source, treat `busy`, `oof` and `tentative` as occupied and `free` / `workingElsewhere` as available. Dates outside the source's range are unknown, not free.
 
-| Parameter | Meaning | Example |
-|-----------|---------|---------|
-| `FREQ` | Frequency | DAILY, WEEKLY, MONTHLY, YEARLY |
-| `INTERVAL` | Every N periods | 2 = every 2 weeks |
-| `BYDAY` | Day of week | MO, TU, WE, TH, FR, SA, SU |
-| `UNTIL` | End date | 20251231T235959Z |
-| `COUNT` | Total occurrences | 10 |
+## Configuration
 
-### DTSTART Formats
+| Variable | Required | Meaning |
+|----------|----------|---------|
+| `OUTLOOK_CALENDAR_SOURCE` | No | `ics`, `export` or `auto` (default); see Choosing the Source |
+| `OUTLOOK_ICS_URLS` | ICS only | Comma-separated published ICS URLs |
+| `OUTLOOK_CALENDAR_DIR` | No | Path to the `Calendar-Export` folder. Without it the script searches `%OneDriveCommercial%`, `%OneDrive%`, `~/Library/CloudStorage/OneDrive-*/` (macOS), `/mnt/c/Users/*/OneDrive - */` (WSL) and `~/OneDrive*/` |
 
-Outlook ICS uses 3 different formats:
+## Setup (once per user, pick one)
 
-| Format | Example | Timezone |
-|--------|---------|----------|
-| UTC | `DTSTART:20251211T060000Z` | UTC (convert +8) |
-| With TZID | `DTSTART;TZID=Taipei Standard Time:20250424T103000` | Local time |
-| All-day | `DTSTART;VALUE=DATE:20251225` | Date only |
+### Option A: ICS subscription
 
-## Example Queries
+1. Outlook on the web → Settings → Calendar → **Shared calendars** → **Publish a calendar** → choose the calendar and **Can view all details** → **Publish**.
+2. Copy the **ICS** link (not HTML) into `OUTLOOK_ICS_URLS`; separate several calendars with commas.
 
-- "What meetings do I have today?"
-- "Show my calendar for this week"
-- "Am I free tomorrow afternoon?"
-- "What's on my schedule for 12/5?"
-- "Show my Work calendar for this week"
-- "What meetings are on my Personal calendar today?"
+If publishing is unavailable or fails, the organization blocks it → use Option B.
+
+### Option B: OneDrive export
+
+1. Power Automate → **My flows** → **Import** → **Import Package (Legacy)** → upload `flow/calendar-export-flow.zip` from this skill.
+2. Under Related resources pick (or create) the **Office 365 Outlook** and **OneDrive for Business** connections → **Import**.
+3. Open the flow → **Save** → **Test** → **Manually**. The flow creates `Calendar-Export/` with both files in OneDrive root if they do not exist (only on a 404, so existing files are never replaced), then fills them; after that it runs every 30 minutes.
+
+`flow/make_package.py` regenerates the package if the flow definition changes.
 
 ## Troubleshooting
 
-### Quick Debug
-
-```bash
-# Run with debug flag
-uv run ${CLAUDE_PLUGIN_ROOT}/skills/outlook-calendar/ics_parser.py \
-  --start 2025-12-01 --end 2025-12-31 --debug
-```
-
-Output shows (per calendar):
-- Calendar name (from X-WR-CALNAME)
-- Total VEVENTs in ICS
-- Number of recurring events
-- Whether dateutil is available
-- Events found in range
-
-### Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| `uv: command not found` | Install uv: `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
-| No events found | Check date range matches your query |
-| Script not found | Verify `${CLAUDE_PLUGIN_ROOT}` resolves correctly |
-| `OUTLOOK_ICS_URLS` not set | Set the env var in shell profile: `export OUTLOOK_ICS_URLS="..."` |
-| Was using `OUTLOOK_ICS_URL` | Rename to `OUTLOOK_ICS_URLS` (plural). The singular form is no longer supported |
-| Calendar name shows "Calendar 1" | The ICS feed lacks `X-WR-CALNAME`; this is a cosmetic fallback |
-
-## Error Handling
-
-- If `OUTLOOK_ICS_URLS` is not set: Guide user to set the env var in their shell profile
-- If uv not found: Install uv first
-- If a URL fails to fetch: Skip it with error message, continue with remaining URLs
-- If no events found: Confirm the date range and calendar permissions
-- If parsing fails: Use `--debug` flag to see event counts per calendar
+| Issue | Cause / Solution |
+|-------|------------------|
+| ICS: `Provide --url, set OUTLOOK_ICS_URLS ...` | ICS not configured → set `OUTLOOK_ICS_URLS`, or set up the export |
+| ICS: a URL fails to fetch | It is skipped with an error and the rest continue; the calendar may have been unpublished or its link reset → publish again and update `OUTLOOK_ICS_URLS`. More in [ics.md](ics.md) |
+| Export: `Calendar-Export/calendar.json not found` (exit 2) | Flow not set up, OneDrive not synced, or non-standard path → set `OUTLOOK_CALENDAR_DIR` |
+| Export: `cannot read ...` | OneDrive online-only placeholder → ask the user to open the file once in Finder / File Explorer |
+| Export: `snapshot is stale` | The flow stopped (failed runs, expired connection, DLP), or this machine's OneDrive copy is behind → check run history in Power Automate and the sync client |
+| Export: `dates ... are not covered by the export` | Range is beyond +30 days or older than one year; say so instead of claiming the user is free |
+| Flow fails at `CreateSnapFile` / `CreateHistFile` | The flow could not create `Calendar-Export/` itself → create the folder with two files containing `{"events":[]}` in OneDrive root and run again |
+| Flow fails with `Prefer outlook.timezone header not applied` | Time zone header ignored; the flow stops rather than write wrong times |
+| Flow fails with `History file is not empty but parsed 0 events` | `calendar-history.json` was edited or corrupted; the flow stops rather than overwrite history |

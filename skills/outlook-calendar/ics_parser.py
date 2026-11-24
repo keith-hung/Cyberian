@@ -328,7 +328,7 @@ def format_event_table(events: list, show_calendar: bool = False) -> str:
 
         # Add recurring indicator
         if event.get('is_recurring'):
-            summary = f"🔄 {summary}"
+            summary = f"{summary} (recurring)"
 
         if show_calendar:
             calendar = event.get('calendar', '')
