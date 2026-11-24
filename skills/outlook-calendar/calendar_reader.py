@@ -107,12 +107,11 @@ def freshness(doc: dict, limit: timedelta, now: datetime) -> dict:
 
 
 def expand_days(ev: dict) -> list:
-    """Yield (day, ev) rows; multi-day all-day events become one row per day."""
+    """Return (day, ev) rows: one per date the event covers (end is exclusive), so an
+    overnight meeting or a multi-day trip shows on every date it occupies."""
     start, end = parse_ts(ev["start"]), parse_ts(ev["end"])
-    if not ev.get("allDay"):
-        return [(start.date(), ev)]
     days, d = [], start.date()
-    last = max(start.date(), (end - timedelta(seconds=1)).date())  # end is exclusive
+    last = max(start.date(), (end - timedelta(microseconds=1)).date())
     while d <= last:
         days.append((d, ev))
         d += timedelta(days=1)
@@ -121,13 +120,16 @@ def expand_days(ev: dict) -> list:
 
 def collect(snap: dict, hist: dict, first: date, last: date, include_cancelled: bool) -> list:
     snap_start = parse_ts(snap["windowStart"]) if snap and snap.get("windowStart") else None
-    events = []
+    events, seen = [], set()
     for ev in (snap or {}).get("events", []):
         events.append(dict(ev, source="snapshot"))
+        seen.add(ev.get("key"))
     for ev in (hist or {}).get("events", []):
-        # Inside the snapshot window the snapshot is authoritative
-        if snap_start and parse_ts(ev["start"]) >= snap_start:
+        # Inside the snapshot window the snapshot is authoritative; an event that starts
+        # before the window but runs into it is in both files, so also skip by key.
+        if (snap_start and parse_ts(ev["start"]) >= snap_start) or ev.get("key") in seen:
             continue
+        seen.add(ev.get("key"))
         events.append(dict(ev, source="history"))
 
     wanted = {"active", "cancelled"} if include_cancelled else {"active"}
@@ -159,6 +161,8 @@ def to_record(day: date, ev: dict, details: bool) -> dict:
         "allDay": bool(ev.get("allDay")),
         "start": None if ev.get("allDay") else start.strftime("%H:%M"),
         "end": None if ev.get("allDay") else end.strftime("%H:%M"),
+        "startDate": start.date().isoformat(),
+        "endDate": max(start, end - timedelta(microseconds=1)).date().isoformat(),
         "subject": ev.get("subject") or "",
         "location": ev.get("location") or "",
         "organizer": ev.get("organizer") or "",
@@ -186,7 +190,12 @@ def format_table(records: list, include_cancelled: bool) -> str:
     head = ["Date", "Time", "Event", "Location", "Show As"] + (["Status"] if include_cancelled else [])
     lines = ["| " + " | ".join(head) + " |", "|" + "|".join("---" for _ in head) + "|"]
     for r in records:
-        when = "All day" if r["allDay"] else f'{r["start"]}-{r["end"]}'
+        if r["allDay"]:
+            when = "All day"
+        elif r["startDate"] != r["endDate"]:
+            when = f'{r["startDate"][5:]} {r["start"]}-{r["endDate"][5:]} {r["end"]}'
+        else:
+            when = f'{r["start"]}-{r["end"]}'
         subject = r["subject"] + (" (recurring)" if r["recurring"] else "")
         row = [f'{r["date"]} ({r["weekday"]})', when, cell(subject), cell(r["location"]), r["showAs"] or "—"]
         if include_cancelled:
@@ -241,7 +250,8 @@ def main() -> int:
         warnings.append(f"history is stale (generatedAt {status['history'].get('generatedAt')})")
     if snap and snap.get("windowEnd") and last >= parse_ts(snap["windowEnd"]).date():
         warnings.append(f"dates on or after {parse_ts(snap['windowEnd']).date()} are not covered by the export")
-    oldest = hist.get("windowStart") if hist else None
+    # Without a usable history file, nothing before the snapshot window is known.
+    oldest = (hist.get("windowStart") if hist and hist.get("events") else None) or (snap or {}).get("windowStart")
     if oldest and first < parse_ts(oldest).date():
         warnings.append(f"dates before {parse_ts(oldest).date()} are not covered by the export")
 

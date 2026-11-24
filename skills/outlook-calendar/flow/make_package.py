@@ -2,7 +2,7 @@
 
 One flow, two files:
   calendar.json          snapshot of -7..+30 days with full fields, overwritten every run
-  calendar-history.json  slim fields, -365 days..today, merged about once a day
+  calendar-history.json  slim fields, -365 days..today, merged about once a day, read in four quarterly requests
 """
 import json
 import os
@@ -15,6 +15,10 @@ SNAP_PATH = "/Calendar-Export/calendar.json"
 HIST_PATH = "/Calendar-Export/calendar-history.json"
 TZ = "Taipei Standard Time"
 HOURS_20 = 20 * 3600 * 10_000_000  # ticks
+STARTER_MAX = 64  # bytes; the starter file is {"events":[]}, a real history file is far larger
+# History is read in fixed quarters (one request each) instead of paging into a variable:
+# variables cannot be hidden from run history, and a fixed request can fail loudly on overflow.
+HIST_QUARTERS = [(-365, -273), (-273, -182), (-182, -91), (-91, 1)]
 
 # Fixed ids keep rebuilds reproducible.
 FLOW_ID = "6c1f4a52-0d3b-4b8e-9a51-3f2e7c9d1a01"
@@ -161,48 +165,54 @@ snapshot = {
 }
 
 # ── history: slim fields, merged when the file is older than 20 hours (or still the starter file)
+def hist_quarter(i, lo, hi, after):
+    q = f"HistQ{i}"
+    return {
+        f"{q}Start": compose("@" + day(lo), after),
+        f"{q}End": compose("@" + day(hi), ok(f"{q}Start")),
+        f"Get{q}": get_page("@" + view_url(f"{q}Start", f"{q}End", SLIM_SELECT), ok(f"{q}End")),
+        f"{q}Overflow": fail_if(f"{q}Overflow",
+                                {"and": [{"not": {"equals": [f"@empty(body('Get{q}')?['@odata.nextLink'])", True]}}]},
+                                f"More than 1000 events in history quarter {i + 1}; file not written", ok(f"Get{q}")),
+    }
+
+
+quarters, prev = {}, ok("HistEnd")
+for i, (lo, hi) in enumerate(HIST_QUARTERS):
+    quarters.update(hist_quarter(i, lo, hi, prev))
+    prev = ok(f"HistQ{i}Overflow")
+pages = ", ".join(f"body('GetHistQ{i}')?['value']" for i in range(len(HIST_QUARTERS)))
+
+# ── history: slim fields, merged when the file is older than 20 hours (or still the starter file).
+# Everything that carries event data is secure, so run history shows no subjects or organizers.
 history_branch = {
-    "ReadHist": api(OD, "GetFileContentByPath", {"path": HIST_PATH, "inferContentType": True}),
+    "ReadHist": api(OD, "GetFileContentByPath", {"path": HIST_PATH, "inferContentType": True}, None, SECURE_IO),
     "HistObj": compose("@if(equals(body('ReadHist')?['$content'], null), body('ReadHist'), "
-                       "json(base64ToString(body('ReadHist')?['$content'])))", ok("ReadHist")),
-    "Existing": compose("@coalesce(outputs('HistObj')?['events'], json('[]'))", ok("HistObj")),
+                       "json(base64ToString(body('ReadHist')?['$content'])))", ok("ReadHist"), secure=True),
+    "Existing": compose("@coalesce(outputs('HistObj')?['events'], json('[]'))", ok("HistObj"), secure=True),
     "ParseGuard": fail_if("ParseGuard", {"and": [{"equals": ["@length(outputs('Existing'))", 0]},
-                                   {"greater": ["@body('HistMeta')?['Size']", 1024]}]},
+                                   {"greater": ["@body('HistMeta')?['Size']", STARTER_MAX]}]},
                           "History file is not empty but parsed 0 events; file not written", ok("Existing")),
-    "HistStart": compose("@" + day(-365), ok("ParseGuard")),
-    "HistEnd": compose("@" + day(1), ok("HistStart")),
-    "Set_histNext": {"runAfter": ok("HistEnd"), "type": "SetVariable",
-                     "inputs": {"name": "histNext", "value": "@" + view_url("HistStart", "HistEnd", SLIM_SELECT)}},
-    "Do_until": {
-        "runAfter": ok("Set_histNext"), "type": "Until",
-        "expression": "@empty(variables('histNext'))",
-        "limit": {"count": 60, "timeout": "PT1H"},
-        "actions": {
-            "GetHistPage": get_page("@variables('histNext')", {}),
-            "MergeHist": compose("@union(variables('histEvents'), body('GetHistPage')?['value'])", ok("GetHistPage")),
-            "Set_histEvents": {"runAfter": ok("MergeHist"), "type": "SetVariable",
-                               "inputs": {"name": "histEvents", "value": "@outputs('MergeHist')"}},
-            "Set_histNextPage": {"runAfter": ok("Set_histEvents"), "type": "SetVariable",
-                                 "inputs": {"name": "histNext", "value": "@coalesce(body('GetHistPage')?['@odata.nextLink'], '')"}},
-        },
-    },
-    "NormalizeHist": select("@variables('histEvents')", SLIM_MAP, ok("Do_until")),
+    "HistStart": compose("@" + day(HIST_QUARTERS[0][0]), ok("ParseGuard")),
+    "HistEnd": compose("@" + day(HIST_QUARTERS[-1][1]), ok("HistStart")),
+    **quarters,
+    # union() also drops the identical copies of events that overlap two quarters
+    "NormalizeHist": select(f"@union({pages})", SLIM_MAP, prev, secure=True),
     "EmptyGuard": fail_if("EmptyGuard", {"and": [{"equals": ["@length(body('NormalizeHist'))", 0]}]},
                           "calendarView returned 0 events for the past year; file not written", ok("NormalizeHist")),
     **bad_tz_guard("@body('NormalizeHist')", "Hist", ok("EmptyGuard")),
-    "FreshKeys": select("@body('NormalizeHist')", "@item()?['key']", ok("HistTzGuard")),
-    "KeepOutside": query("@outputs('Existing')",
-                         "@and(not(contains(body('FreshKeys'), item()?['key'])), or(less(ticks(item()?['start']), ticks(outputs('HistStart'))), greaterOrEquals(ticks(item()?['start']), ticks(outputs('HistEnd')))))",
-                         ok("FreshKeys")),
+    "FreshKeys": select("@body('NormalizeHist')", "@item()?['key']", ok("HistTzGuard"), secure=True),
+    # Events that vanished from the window stay as 'deleted'; events older than the window fall off.
     "Vanished": query("@outputs('Existing')",
                       "@and(not(contains(body('FreshKeys'), item()?['key'])), greaterOrEquals(ticks(item()?['start']), ticks(outputs('HistStart'))), less(ticks(item()?['start']), ticks(outputs('HistEnd'))))",
-                      ok("KeepOutside")),
+                      ok("FreshKeys"), secure=True),
     "MarkDeleted": select("@body('Vanished')",
                           "@if(equals(item()?['status'],'active'), setProperty(setProperty(item(),'status','deleted'),'deletedDetectedAt', outputs('RunAt')), item())",
-                          ok("Vanished")),
-    "Combined": compose("@union(body('KeepOutside'), body('MarkDeleted'), body('NormalizeHist'))", ok("MarkDeleted")),
-    "BuildHist": compose(file_body("outputs('Combined')", "HistStart", "HistEnd", "history"), ok("Combined")),
-    "WriteHist": api(OD, "UpdateFile", {"id": "@body('HistMeta')?['Id']", "body": "@outputs('BuildHist')"}, ok("BuildHist")),
+                          ok("Vanished"), secure=True),
+    "Combined": compose("@union(body('MarkDeleted'), body('NormalizeHist'))", ok("MarkDeleted"), secure=True),
+    "BuildHist": compose(file_body("outputs('Combined')", "HistStart", "HistEnd", "history"), ok("Combined"), secure=True),
+    "WriteHist": api(OD, "UpdateFile", {"id": "@body('HistMeta')?['Id']", "body": "@outputs('BuildHist')"},
+                     ok("BuildHist"), SECURE_IN),
 }
 
 history = {
@@ -210,7 +220,7 @@ history = {
     "HistoryDue": {
         "runAfter": ok("HistMeta"), "type": "If",
         "expression": {"or": [
-            {"less": ["@body('HistMeta')?['Size']", 1024]},
+            {"less": ["@body('HistMeta')?['Size']", STARTER_MAX]},
             {"greater": [f"@sub(ticks(utcNow()), ticks(body('HistMeta')?['LastModified']))", HOURS_20]},
         ]},
         "actions": history_branch,
@@ -220,12 +230,8 @@ history = {
 
 actions = {
     "RunAt": compose(f"@concat(convertFromUtc(utcNow(),'{TZ}','yyyy-MM-ddTHH:mm:ss'),'+08:00')", {}),
-    "Init_histNext": {"runAfter": ok("RunAt"), "type": "InitializeVariable",
-                      "inputs": {"variables": [{"name": "histNext", "type": "string", "value": ""}]}},
-    "Init_histEvents": {"runAfter": ok("Init_histNext"), "type": "InitializeVariable",
-                        "inputs": {"variables": [{"name": "histEvents", "type": "array", "value": []}]}},
 }
-snapshot["SnapStart"]["runAfter"] = ok("Init_histEvents")
+snapshot["SnapStart"]["runAfter"] = ok("RunAt")
 actions.update(snapshot)
 actions.update(history)
 

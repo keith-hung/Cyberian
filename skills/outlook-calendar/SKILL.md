@@ -95,7 +95,8 @@ How the two files are combined:
 - Inside the snapshot window, only `calendar.json` is used (it is current; history may lag up to a day).
 - Before the snapshot window, `calendar-history.json` fills in.
 - Only `active` meetings are listed by default; `deleted` (history only) is never listed.
-- Multi-day all-day events are expanded into one row per day.
+- Events covering several dates (multi-day all-day events, overnight meetings) are listed on every date they cover; timed ones show both dates in the Time column.
+- An event that starts before the snapshot window but runs into it is taken from the snapshot only.
 - All times are Taipei time (`+08:00`).
 
 Warnings (stale data, dates outside the exported range) are printed to stderr, appended under the table, and included in JSON `warnings`. Relay them to the user.
@@ -152,4 +153,5 @@ If publishing is unavailable or fails, the organization blocks it → use Option
 | Export: `dates ... are not covered by the export` | Range is beyond +30 days or older than one year; say so instead of claiming the user is free |
 | Flow fails at `CreateSnapFile` / `CreateHistFile` | The flow could not create `Calendar-Export/` itself → create the folder with two files containing `{"events":[]}` in OneDrive root and run again |
 | Flow fails with `Prefer outlook.timezone header not applied` | Time zone header ignored; the flow stops rather than write wrong times |
+| Flow fails with `More than 1000 events in snapshot window` or `... in history quarter N` | One request returns at most 1000 events; the flow stops rather than write a partial file → the window must be split further in `flow/make_package.py` |
 | Flow fails with `History file is not empty but parsed 0 events` | `calendar-history.json` was edited or corrupted; the flow stops rather than overwrite history |
