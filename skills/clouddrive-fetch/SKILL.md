@@ -13,7 +13,7 @@ Sync clients keep "online-only" files as placeholders and download them on first
 |----------|------------------|----------|
 | macOS (OneDrive, iCloud Drive, Google Drive, Dropbox) | `st_flags` has `SF_DATALESS` (`ls -lO` shows `dataless`) | enables the materialize I/O policy for itself (`setiopolicy_np`), then reads |
 | Windows (OneDrive Files On-Demand, other Cloud Files providers) | attributes have `RECALL_ON_DATA_ACCESS`, `RECALL_ON_OPEN` or `OFFLINE` | reads |
-| WSL (`/mnt/c/...`) and Linux (rclone mount) | `st_size > 0` and `st_blocks == 0` | reads |
+| WSL (`/mnt/c/...`) and Linux (rclone mount) | heuristic: `st_size > 0` and `st_blocks == 0` (small local NTFS files and sparse files match too) | reads; a complete read counts as fetched |
 
 Files are not set to "Always keep on this device"; the provider may free them again later. Do not pin them or change sync settings on the user's behalf.
 
@@ -30,8 +30,8 @@ uv run $F "<path>" ["<path>" ...]
 # Only list online-only files
 uv run $F --list "<folder>"
 
-# Download and copy to another place
-uv run $F --copy "<src>" ["<src>" ...] "<dst>"
+# Download and copy files or folders into another place (refuses to overwrite without --force)
+uv run $F --copy [--force] "<src>" ["<src>" ...] "<dst>"
 
 # Machine-readable summary
 uv run $F --json "<path>"
@@ -44,11 +44,12 @@ Quote paths: cloud-drive folders usually contain spaces (`OneDrive - <Org>`).
 | Option | Meaning |
 |--------|---------|
 | `--list` | List online-only files, download nothing |
-| `--copy` | Copy SRC... to the last argument (a folder when there are several SRC) |
+| `--copy` | Copy SRC... (files or folders) to the last argument; DST must be an existing folder for several SRC or a folder SRC, which is copied as `DST/<folder name>/` |
+| `--force` | With `--copy`, overwrite existing files |
 | `-j`, `--jobs N` | Parallel downloads, default 4 |
 | `--json` | Print `{fetched, online, copied, local, failed, missing, success}` instead of text lines |
 
-Exit codes: 0 success, 1 some files failed or are missing, 3 bad arguments.
+Exit codes: 0 success, 1 some files failed or are missing (including files that vanished or could not be read during the scan), 3 bad arguments. A symlink given as an argument is resolved to its target.
 
 ## Guidance
 
@@ -62,4 +63,4 @@ Exit codes: 0 success, 1 some files failed or are missing, 3 bad arguments.
 |-------|------------------|
 | `failed ...: still online-only after read` | The provider did not download (offline, signed out, sync paused) → ask the user to check the sync client |
 | `failed ...: Resource deadlock avoided` (macOS) | The I/O policy could not be enabled (warning on stderr) → run the script from a normal Terminal |
-| Linux file listed as online-only but already local | Sparse file with no allocated blocks; reading it is harmless |
+| WSL / Linux file listed as online-only but already local | Small NTFS files and sparse files report no allocated blocks; reading them is harmless and they are counted as fetched |

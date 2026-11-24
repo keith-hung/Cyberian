@@ -4,11 +4,9 @@
 
 ## [Unreleased]
 
-## [Unreleased]
-
 ### 新增
 
-- 新增 `clouddrive-fetch` skill：把雲端硬碟「只在線上」的佔位檔原地下載下來（OneDrive，iCloud Drive，Google Drive，Dropbox，rclone mount），不設成「永遠保留在此裝置上」。macOS 以 `SF_DATALESS` 判斷並替自己開啟 `setiopolicy_np` 下載政策（解決 Claude Code 讀檔出現 `Resource deadlock avoided`），Windows 看 Cloud Files 屬性，WSL 與 Linux 看 `st_blocks`。提供 `--list`，`--copy`，`--json`。以 `skills/clouddrive-fetch/clouddrive_fetch.py`（PEP 723，stdlib-only）隨 plugin 發布。
+- 新增 `clouddrive-fetch` skill：把雲端硬碟「只在線上」的佔位檔原地下載下來（OneDrive，iCloud Drive，Google Drive，Dropbox，rclone mount），不設成「永遠保留在此裝置上」。macOS 以 `SF_DATALESS` 判斷並替自己開啟 `setiopolicy_np` 下載政策（解決 Claude Code 讀檔出現 `Resource deadlock avoided`），Windows 看 Cloud Files 屬性，WSL 與 Linux 看 `st_blocks`。提供 `--list`，`--copy`（可複製資料夾，目的地已存在時需 `--force`），`--json`。以 `skills/clouddrive-fetch/clouddrive_fetch.py`（PEP 723，stdlib-only）隨 plugin 發布。
 
 ## [0.3.1] - 2026-07-02
 
